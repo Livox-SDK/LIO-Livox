@@ -26,7 +26,7 @@ The system consists of two ros nodes: ScanRegistartion and PoseEstimation.
 *  In the node "PoseEstimation", the main thread aims to estimate sensor poses, while another thread in the class "Estimator" uses the class "MapManager" to build and manage feature maps.
 
 The system is mainly designed for car platforms in the large scale outdoor environment.
-Users can easily run the system with a Livox Horizon LiDAR.
+Users can easily run the system with a Livox Horizon LiDAR.Horizon 
 
 The system starts with the node "ScanRegistartion", where feature points are extracted. Before the feature extraction, dynamic objects are removed from the raw point cloud, since in urban scenes there are usually many dynamic objects, which 
 affect system robustness and precision. For the dynamic objects filter, we use a fast point cloud segmentation method. The Euclidean clustering is applied to group points into some clusters. The raw point cloud is divided into ground points, background points, and foreground points. 
@@ -115,7 +115,7 @@ There are some parameters in launch files:
 *  Extrinsic_Tlb: extrinsic parameter between LiDAR and IMU, which uses SE3 form. If you want to use an external IMU, you need to calibrate your own sensor suite
 and change this parameter to your extrinsic parameter.
 
-There are also some parameters int the config file:
+There are also some parameters in the config file:
 *  Use_seg: choose the segmentation mode for dynamic objects filtering, there are 2 modes:
     -  0 - without using the segmentation method, you can choose this mode if there is few dynamic objects in your data
     -  1 - using the segmentation method to remove dynamic objects
