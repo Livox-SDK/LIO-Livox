@@ -1,0 +1,23 @@
+<launch>
+
+    <node pkg="lio_livox" type="ScanRegistration" name="ScanRegistration" output="screen">
+
+        <param name="config_file" value="$(find lio_livox)/config/horizon_config.yaml"/>
+    </node>
+
+    <node pkg="lio_livox" type="PoseEstimation" name="PoseEstimation" output="screen">
+        <!-- 0-Not Use IMU, 1-Use IMU remove Rotation Distort, 2-Tightly Coupled IMU -->
+        <param name="IMU_Mode" type="int" value="2" />
+        <!-- Voxel Filter Size Use to Downsize Map Cloud -->
+        <param name="filter_parameter_corner" type="double" value="0.2" />
+        <param name="filter_parameter_surf" type="double" value="0.4" />
+        <!-- Extrinsic Parameter between Lidar & IMU -->
+        <rosparam param="Extrinsic_Tlb"> [1.0, 0.0, 0.0, -0.05512,
+                                          0.0, 1.0, 0.0, -0.02226,
+                                          0.0, 0.0, 1.0,  0.0297,
+                                          0.0, 0.0, 0.0,  1.0]</rosparam>
+    </node>
+
+    <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find lio_livox)/rviz_cfg/lio.rviz" />
+
+</launch>

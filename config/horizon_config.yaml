@@ -1,0 +1,17 @@
+%YAML:1.0
+
+
+# switches
+Lidar_Type: 0    # 0-horizon
+Used_Line: 6    # lines used for lio, set to 1~6
+Feature_Mode: 0    # 0(false) or 1(true)
+NumCurvSize: 2
+DistanceFaraway: 100 # [m]  <DistanceFaraway near / >DistanceFaraway far
+NumFlat: 3 # nums of one part's flat feature
+PartNum: 150 # nums of one scan's parts
+FlatThreshold: 0.02 # cloud curvature threshold of flat feature
+BreakCornerDis: 1 # break distance of break points
+LidarNearestDis: 1.0 # if(depth < LidarNearestDis) do not use this point 
+KdTreeCornerOutlierDis: 0.2 # corner filter threshold
+Use_seg: 1 # use segment algorithm
+map_skip_frame: 2
