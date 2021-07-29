@@ -1,5 +1,5 @@
-# LIO-Livox (A Robust LiDAR-Inertial Odometry for Livox Horizon LiDAR)
-This respository implements a robust LiDAR-inertial odometry system for Livox Horizon LiDAR. 
+# LIO-Livox (A Robust LiDAR-Inertial Odometry for Livox LiDAR)
+This respository implements a robust LiDAR-inertial odometry system for Livox LiDAR. 
 The system uses only a single Livox LiDAR with a built-in IMU. It has a robust initialization module, 
 which is independent to the sensor motion. **It can be initialized with the static state, dynamic state, and the mixture of static and dynamic state.** 
 The system achieves super robust performance. **It can pass through a 4km-tunnel and run on the highway with a very high speed (about 80km/h) using a single Livox Horizon.**
@@ -114,6 +114,11 @@ There are some parameters in launch files:
     -  2 - tightly coupling IMU and LiDAR information
 *  Extrinsic_Tlb: extrinsic parameter between LiDAR and IMU, which uses SE3 form. If you want to use an external IMU, you need to calibrate your own sensor suite
 and change this parameter to your extrinsic parameter.
+
+There are also some parameters int the config file:
+*  Use_seg: choose the segmentation mode for dynamic objects filtering, there are 2 modes:
+    -  0 - without using the segmentation method, you can choose this mode if there is few dynamic objects in your data
+    -  1 - using the segmentation method to remove dynamic objects
 
 ## Acknowledgements
 Thanks for following work:
