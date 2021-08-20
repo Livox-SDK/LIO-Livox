@@ -1,0 +1,33 @@
+FROM althack/ros:melodic-full
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies from APT
+RUN apt-get update && apt-get install -y git vim nano wget unzip build-essential cmake \
+libgoogle-glog-dev libboost-all-dev protobuf-compiler libatlas-base-dev libeigen3-dev  \
+libsuitesparse-dev ros-melodic-pcl-ros
+
+# Clean up APT
+RUN apt-get autoclean \
+  && apt-get autoremove \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install Ceres
+RUN cd /tmp && git clone --depth=1 -b 1.14.0 https://ceres-solver.googlesource.com/ceres-solver
+RUN cd /tmp/ceres-solver && cmake . && make -j$(nproc) && make install
+RUN rm -rf /tmp/ceres-solver
+
+# Prepare workspace for livox driver and LIO-Livox
+# Add commands to clone other repos
+RUN mkdir -p /home/ros/catkin_ws/src
+RUN cd /home/ros/catkin_ws/src && git clone https://github.com/Livox-SDK/livox_ros_driver
+RUN cd /home/ros/catkin_ws/src && git clone https://github.com/Livox-SDK/LIO-Livox
+RUN cd /home/ros/catkin_ws && catkin_make
+
+# Set up auto-source of workspace for ros user
+RUN echo "source /home/ros/catkin_ws/devel/setup.bash" >> /root/.bashrc
+WORKDIR "/home/ros/catkin_ws/"
+
+# Keep docker running
+# https://stackoverflow.com/questions/30209776/docker-container-will-automatically-stop-after-docker-run-d
+ENTRYPOINT ["tail"]
+CMD ["-f","/dev/null"]
