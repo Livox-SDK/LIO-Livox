@@ -100,6 +100,10 @@ source devel/setup.bash
 roslaunch lio_livox horizon.launch
 ```
 
+## Docker support
+
+For running LIO-Livox with Docker, see [Docker for LIO-Livox](./docker).
+
 ## Notes:
 The current version of the system is only adopted for Livox Horizon. In theory, it should be able to run directly with a Livox Avia, but we haven't done enough tests.
 Besides, the system doesn't provide a interface of Livox mid series. If you want use mid-40 or mid-70, you can try [livox_mapping](https://github.com/Livox-SDK/livox_mapping).
