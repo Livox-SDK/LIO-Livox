@@ -1,3 +1,16 @@
+# Lio-spinning-lidar
+
+This repository is a modified LiDAR-inertial odometry system for Spinning LiDAR. The system is developed based on the open-source odometry framework [**LIO-Livox**](https://github.com/Livox-SDK/LIO-Livox) to get the odometry information. And the feature extract moudle is implemented based on [**LIO-SAM**](https://github.com/TixiaoShan/LIO-SAM) .
+
+
+<div align="center">
+<img src="./doc/lio-sam2.gif" width="1000px">
+</div>
+
+
+--------------=----------------------------  divide line  ----------------------------------------------
+
+
 # LIO-Livox (A Robust LiDAR-Inertial Odometry for Livox LiDAR)
 This respository implements a robust LiDAR-inertial odometry system for Livox LiDAR. 
 The system uses only a single Livox LiDAR with a built-in IMU. It has a robust initialization module, 
