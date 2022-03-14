@@ -1,0 +1,36 @@
+<launch>
+
+    <arg name="project" default="GC_LOAM"/>
+    
+    <node pkg="tf" type="static_transform_publisher" name="base_link_joint" args="0 0 0 0 0 0 base_link chassis_link 100" />
+    <node pkg="tf" type="static_transform_publisher" name="imu_joint" args="0 0 0 0 0 0 chassis_link imu_link 100" />
+    <node pkg="tf" type="static_transform_publisher" name="gps_joint" args="0 0 0 0 0 0 chassis_link gps_link 100" />
+    <node pkg="tf" type="static_transform_publisher" name="velodyne_joint" args="0 0 0 0 0 0 chassis_link velodyne 100" />
+
+    <!-- Parameters -->
+    <rosparam file="$(find GC_LOAM)/config/params.yaml" command="load" />
+
+    <!--- LOAM -->
+    <node pkg="$(arg project)" type="$(arg project)_featureExtract"   name="$(arg project)_featureExtract"    output="screen" 	respawn="true"/>
+
+    <node pkg="$(arg project)" type="$(arg project)_poseEstimate"   name="$(arg project)_poseEstimate"    output="screen">
+        <!-- 0-Not Use IMU, 1-Use IMU remove Rotation Distort, 2-Tightly Coupled IMU -->
+        <param name="IMU_Mode" type="int" value="0" />
+        <!-- Voxel Filter Size Use to Downsize Map Cloud -->
+        <param name="filter_parameter_corner" type="double" value="0.2" />
+        <param name="filter_parameter_surf" type="double" value="0.4" />
+        <!-- Extrinsic Parameter between Lidar & IMU -->
+        <rosparam param="Extrinsic_Tlb"> [1.0, 0.0, 0.0, -0.0,
+                                          0.0, 1.0, 0.0, -0.0,
+                                          0.0, 0.0, 1.0,  0.0,
+                                          0.0, 0.0, 0.0,  1.0]</rosparam>
+    </node>
+
+    <!--- Run Rviz-->
+    <node pkg="rviz" type="rviz" name="$(arg project)_rviz" args="-d $(find GC_LOAM)/launch/include/lio.rviz" />
+
+
+    <arg name="bag_filename" default="/home/yidong/桌面/2022-02-25-13-36-53.bag"/>
+    <!-- <node name="playbag" pkg="rosbag" type="play" args="clock $(arg bag_filename) -s 100 -r 1.0 " /> -->
+
+</launch>

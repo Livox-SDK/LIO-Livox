@@ -1,8 +1,8 @@
-#include "utils/ceresfunc.h"
+#include "Estimator/ceresfunc.h"
 
-void* ThreadsConstructA(void* threadsstruct)
+void *ThreadsConstructA(void *threadsstruct)
 {
-  ThreadsStruct* p = ((ThreadsStruct*)threadsstruct);
+  ThreadsStruct *p = ((ThreadsStruct *)threadsstruct);
   for (auto it : p->sub_factors)
   {
     for (int i = 0; i < static_cast<int>(it->parameter_blocks.size()); i++)
@@ -28,4 +28,3 @@ void* ThreadsConstructA(void* threadsstruct)
   }
   return threadsstruct;
 }
-
