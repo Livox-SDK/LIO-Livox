@@ -252,10 +252,13 @@ public:
         else if (sensor == SensorType::OUSTER)
         {
             // Convert to Velodyne format
-            pcl::moveFromROSMsg(currentCloudMsg, *tmpOusterCloudIn);
+            pcl::fromROSMsg(currentCloudMsg, *tmpOusterCloudIn);
+            // pcl::moveFromROSMsg(currentCloudMsg, *tmpOusterCloudIn);
             inputCloud->points.resize(tmpOusterCloudIn->size());
             inputCloud->is_dense = tmpOusterCloudIn->is_dense;
-            timespan = tmpOusterCloudIn->points.back().t;
+            //  FIXME:偶现,最后一个点时间戳异常
+            // timespan = tmpOusterCloudIn->points.back().t;
+            timespan = tmpOusterCloudIn->points[tmpOusterCloudIn->size() - 2].t;
             for (size_t i = 0; i < tmpOusterCloudIn->size(); i++)
             {
                 auto &src = tmpOusterCloudIn->points[i];
@@ -268,6 +271,11 @@ public:
                 dst.normal_z = 0;
                 dst.normal_x = src.t / timespan; //        *1e-9f;
             }
+            timespan = timespan * 1e-9f;
+            // std::cout << std::endl;
+            // for (int i = tmpOusterCloudIn->size() - 6; i < tmpOusterCloudIn->size(); i++)
+            //     std::cout << tmpOusterCloudIn->points[i].t * 1e-9f << " ,";
+            // std::cout << std::endl;
         }
         else
         {
@@ -278,7 +286,8 @@ public:
         // get timestamp
         cloudHeader = currentCloudMsg.header;
         timeScanCur = cloudHeader.stamp.toSec();
-        timeScanEnd = timeScanCur + inputCloud->points.back().normal_x;
+        timeScanEnd = timeScanCur + timespan; // inputCloud->points.back().normal_x;
+        std::cout << "timeC:" << timeScanCur << "," << timespan << std::endl;
 
         // check dense flag
         if (inputCloud->is_dense == false)
@@ -535,7 +544,7 @@ public:
                 {
                     if (cloudLabel[k] <= 0)
                     {
-                        extractedCloud->points[k].normal_z = 2.0; //   for corner
+                        extractedCloud->points[k].normal_z = 2.0; //   for surf
                         surfaceCloudScan->push_back(extractedCloud->points[k]);
                     }
                 }
