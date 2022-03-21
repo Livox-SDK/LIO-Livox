@@ -7,6 +7,11 @@ This repository is a modified LiDAR-inertial odometry system for Spinning LiDAR.
 <img src="./doc/lio-sam2.gif" width="1000px">
 </div>
 
+**Test with west.bag(lio-sam)**
+<div align="center">
+<img src="./doc/west.png" width="1000px">
+</div>
+
 
 --------------=----------------------------  divide line  ----------------------------------------------
 
