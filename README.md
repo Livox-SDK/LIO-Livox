@@ -2,12 +2,12 @@
 
 This repository is a modified LiDAR-inertial odometry system for Spinning LiDAR. The system is developed based on the open-source odometry framework [**LIO-Livox**](https://github.com/Livox-SDK/LIO-Livox) to get the odometry information. And the feature extract moudle is implemented based on [**LIO-SAM**](https://github.com/TixiaoShan/LIO-SAM) .
 
-**Test with ouster-32(os1),Holding OS laser, riding a scooter to collect this test data**
+**Test with ouster-32(os1),holding OS laser, riding a scooter to collect this test data**
 <div align="center">
 <img src="./doc/lio-livox.gif" width="1000px">
 </div>
 
-**Test with ouster-64(os1)**
+**Test with ouster-64(os1), this data is collected on a ground robot(max speed 1.2m/s)**
 <div align="center">
 <img src="./doc/lio-sam2.gif" width="1000px">
 </div>
