@@ -24,7 +24,7 @@ This repository is a modified LiDAR-inertial odometry system for Spinning LiDAR.
 ##	time compare
 
 <div align="center">
-<img src="./doc/time.png" width="1000px">
+<img src="./doc/time0.png" width="1000px">
 </div>
 
 map manager use ikdtree instead of the original two individual (global & local) map.
