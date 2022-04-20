@@ -17,6 +17,9 @@ This repository is a modified LiDAR-inertial odometry system for Spinning LiDAR.
 <img src="./doc/west.png" width="1000px">
 </div>
 
+## Example results 
+- city road test with vlp-16 vehicle-mounted  [bilibili video](https://www.bilibili.com/video/BV1wZ4y1174Z?spm_id_from=333.337.search-card.all.click) 
+- city road test with OS1-32, riding a scooter [bilibili video](https://www.bilibili.com/video/BV1UR4y1N7rs?spm_id_from=333.337.search-card.all.click)
 
 --------------=----------------------------  divide line  ----------------------------------------------
 
