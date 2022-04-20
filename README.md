@@ -21,6 +21,14 @@ This repository is a modified LiDAR-inertial odometry system for Spinning LiDAR.
 - city road test with vlp-16 vehicle-mounted  [bilibili video](https://www.bilibili.com/video/BV1wZ4y1174Z?spm_id_from=333.337.search-card.all.click) 
 - city road test with OS1-32, riding a scooter [bilibili video](https://www.bilibili.com/video/BV1UR4y1N7rs?spm_id_from=333.337.search-card.all.click)
 
+##	time compare
+
+<div align="center">
+<img src="./doc/time.png" width="1000px">
+</div>
+
+map manager use ikdtree instead of the original two individual (global & local) map.
+
 --------------=----------------------------  divide line  ----------------------------------------------
 
 
@@ -66,7 +74,7 @@ local geometry properties. We first extract points with large curvature and isol
 For points with different distance, thresholds are set to different values, in order to make the distribution of points in space as uniform as possible. 
 
 <div align="center">
-<img src="./doc/feature extraction.png" height="400px">
+<img src="./doc/feature_extraction.png" height="400px">
 </div>
 
 In the node "PoseEstimation", the motion distortion of the point cloud is compensated using IMU preintegration or constant velocity model. Then the IMU initialization module is performed. If the Initialization
