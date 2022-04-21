@@ -2,6 +2,14 @@
 
 This repository is a modified LiDAR-inertial odometry system for Spinning LiDAR. The system is developed based on the open-source odometry framework [**LIO-Livox**](https://github.com/Livox-SDK/LIO-Livox) to get the odometry information. And the feature extract moudle is implemented based on [**LIO-SAM**](https://github.com/TixiaoShan/LIO-SAM) .
 
+## Modification
+
+  - Feature extract moudle is implemented based on lio-sam, this moudle support velodyne,ouster and livox lidar;
+  - Modify the PoseEstimation moudle, and the new front-end use Quaternion , **not rely on sophus**,--[**This part is not uploaded to the repository**].
+  - map manager use ikdtree instead of the original two individual (global & local) map [**This part is not uploaded to the repository**]；
+
+## demo
+
 **Test with ouster-32(os1),holding OS laser, riding a scooter to collect this test data**
 <div align="center">
 <img src="./doc/lio-livox.gif" width="1000px">
