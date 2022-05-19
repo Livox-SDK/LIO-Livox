@@ -1,3 +1,11 @@
+<a href="#"><img src="https://img.shields.io/badge/c++-%2300599C.svg?style=flat&logo=c%2B%2B&logoColor=white"></img></a>
+  <a href="#"><img src="https://img.shields.io/github/stars/chengwei0427/LIO-Livox-modified"></img></a>
+  <a href="#"><img src="https://img.shields.io/github/forks/chengwei0427/LIO-Livox-modified"></img></a>
+  <a href="#"><img src="https://img.shields.io/github/repo-size/chengwei0427/LIO-Livox-modified"></img></a>
+  <a href="https://github.com/chengwei0427/LIO-Livox-modified/issues"><img src="https://img.shields.io/github/issues/chengwei0427/LIO-Livox-modified"></img></a>
+  <a href="https://github.com/chengwei0427/LIO-Livox-modified/graphs/contributors"><img src="https://img.shields.io/github/contributors/chengwei0427/LIO-Livox-modified?color=blue"></img></a>
+
+
 # Lio-spinning-lidar
 
 This repository is a modified LiDAR-inertial odometry system for Spinning LiDAR. The system is developed based on the open-source odometry framework [**LIO-Livox**](https://github.com/Livox-SDK/LIO-Livox) to get the odometry information. And the feature extract moudle is implemented based on [**LIO-SAM**](https://github.com/TixiaoShan/LIO-SAM) .
