@@ -26,12 +26,14 @@ class Estimator
 	typedef pcl::PointXYZINormal PointType;
 
 public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	/** \brief slide window size */
 	static const int SLIDEWINDOWSIZE = 2;
 
 	/** \brief lidar frame struct */
 	struct LidarFrame
 	{
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 		pcl::PointCloud<PointType>::Ptr laserCloud;
 		IMUIntegrator imuIntegrator;
 		Eigen::Vector3d P;
@@ -54,6 +56,7 @@ public:
 	/** \brief point to line feature */
 	struct FeatureLine
 	{
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 		Eigen::Vector3d pointOri;
 		Eigen::Vector3d lineP1;
 		Eigen::Vector3d lineP2;
@@ -78,6 +81,7 @@ public:
 	/** \brief point to plan feature */
 	struct FeaturePlan
 	{
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 		Eigen::Vector3d pointOri;
 		double pa;
 		double pb;
@@ -101,6 +105,7 @@ public:
 	/** \brief point to plan feature */
 	struct FeaturePlanVec
 	{
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 		Eigen::Vector3d pointOri;
 		Eigen::Vector3d pointProj;
 		Eigen::Matrix3d sqrt_info;
@@ -122,6 +127,7 @@ public:
 	/** \brief non feature */
 	struct FeatureNon
 	{
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 		Eigen::Vector3d pointOri;
 		double pa;
 		double pb;

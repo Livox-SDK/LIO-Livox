@@ -365,7 +365,7 @@ struct Cost_NavState_PRV_Bias
 		Sophus::SO3<T> dRij = Sophus::SO3<T>(imu_measure.GetDeltaQ().cast<T>());
 		Sophus::SO3<T> RiT = SO3_Ri.inverse();
 
-		Eigen::Matrix<T, 3, 1> rPij = RiT * (Pj - Pi - Vi * dTij - 0.5 * GravityVec.cast<T>() * dT2) -
+		Eigen::Matrix<T, 3, 1> rPij = RiT * (Pj - Pi - Vi * dTij - T(0.5) * GravityVec.cast<T>() * dT2) -
 									  (dPij + imu_measure.GetJacobian().block<3, 3>(IMUIntegrator::O_P, IMUIntegrator::O_BG).cast<T>() * dbgi +
 									   imu_measure.GetJacobian().block<3, 3>(IMUIntegrator::O_P, IMUIntegrator::O_BA).cast<T>() * dbai);
 

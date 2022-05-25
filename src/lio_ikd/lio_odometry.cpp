@@ -1,18 +1,17 @@
-#include "Estimator/Estimator.h"
+#include "lio_ikd/lio.h"
 typedef pcl::PointXYZINormal PointType;
 
 int WINDOWSIZE;
 bool LidarIMUInited = false;
-boost::shared_ptr<std::list<Estimator::LidarFrame>> lidarFrameList;
+boost::shared_ptr<std::list<LIO::LidarFrame>> lidarFrameList;
 pcl::PointCloud<PointType>::Ptr laserCloudFullRes;
-Estimator *estimator;
+LIO *estimator;
 
 ros::Publisher pubLaserOdometry;
 ros::Publisher pubLaserOdometryPath;
 ros::Publisher pubFullLaserCloud;
 tf::StampedTransform laserOdometryTrans;
 tf::TransformBroadcaster *tfBroadcaster;
-ros::Publisher pubGps;
 
 bool newfullCloud = false;
 
@@ -22,6 +21,7 @@ std::mutex _mutexLidarQueue;
 std::queue<sensor_msgs::PointCloud2ConstPtr> _lidarMsgQueue;
 std::mutex _mutexIMUQueue;
 std::queue<sensor_msgs::ImuConstPtr> _imuMsgQueue;
+
 Eigen::Matrix4d exTlb;
 Eigen::Matrix3d exRlb, exRbl;
 Eigen::Vector3d exPlb, exPbl;
@@ -29,7 +29,7 @@ Eigen::Vector3d GravityVector;
 float filter_parameter_corner = 0.2;
 float filter_parameter_surf = 0.4;
 int IMU_Mode = 2;
-sensor_msgs::NavSatFix gps;
+
 int pushCount = 0;
 double startTime = 0;
 
@@ -47,7 +47,7 @@ void pubOdometry(const Eigen::Matrix4d &newPose, double &timefullCloud)
   Eigen::Quaterniond newQuat(Rcurr);
   Eigen::Vector3d newPosition = newPose.topRightCorner(3, 1);
   laserOdometry.header.frame_id = "/world";
-  laserOdometry.child_frame_id = "/livox_frame";
+  laserOdometry.child_frame_id = "/base_link";
   laserOdometry.header.stamp = ros::Time().fromSec(timefullCloud);
   laserOdometry.pose.pose.orientation.x = newQuat.x();
   laserOdometry.pose.pose.orientation.y = newQuat.y();
@@ -57,7 +57,7 @@ void pubOdometry(const Eigen::Matrix4d &newPose, double &timefullCloud)
   laserOdometry.pose.pose.position.y = newPosition.y();
   laserOdometry.pose.pose.position.z = newPosition.z();
   pubLaserOdometry.publish(laserOdometry);
-  printf("1\n");
+
   geometry_msgs::PoseStamped laserPose;
   laserPose.header = laserOdometry.header;
   laserPose.pose = laserOdometry.pose.pose;
@@ -67,22 +67,11 @@ void pubOdometry(const Eigen::Matrix4d &newPose, double &timefullCloud)
   pubLaserOdometryPath.publish(laserOdoPath);
 
   laserOdometryTrans.frame_id_ = "/world";
-  laserOdometryTrans.child_frame_id_ = "/livox_frame";
+  laserOdometryTrans.child_frame_id_ = "/base_link";
   laserOdometryTrans.stamp_ = ros::Time().fromSec(timefullCloud);
   laserOdometryTrans.setRotation(tf::Quaternion(newQuat.x(), newQuat.y(), newQuat.z(), newQuat.w()));
   laserOdometryTrans.setOrigin(tf::Vector3(newPosition.x(), newPosition.y(), newPosition.z()));
   tfBroadcaster->sendTransform(laserOdometryTrans);
-
-  // gps.header.stamp = ros::Time().fromSec(timefullCloud);
-  // gps.header.frame_id = "world";
-  // gps.latitude = newPosition.x();
-  // gps.longitude = newPosition.y();
-  // gps.altitude = newPosition.z();
-  // gps.position_covariance = {
-  //     Rcurr(0, 0), Rcurr(1, 0), Rcurr(2, 0),
-  //     Rcurr(0, 1), Rcurr(1, 1), Rcurr(2, 1),
-  //     Rcurr(0, 2), Rcurr(1, 2), Rcurr(2, 2)};
-  // pubGps.publish(gps);
 }
 
 void fullCallBack(const sensor_msgs::PointCloud2ConstPtr &msg)
@@ -171,7 +160,7 @@ void RemoveLidarDistortion(pcl::PointCloud<PointType>::Ptr &cloud,
     Eigen::Vector3d startP;
     float s = cloud->points[i].normal_x; //  time intervel
     Eigen::Quaterniond qlc = Eigen::Quaterniond(dRlc).normalized();
-    Eigen::Quaterniond delta_qlc = Eigen::Quaterniond::Identity().slerp(s, qlc).normalized(); // 插值
+    Eigen::Quaterniond delta_qlc = Eigen::Quaterniond::Identity().slerp(s, qlc).normalized(); 
     const Eigen::Vector3d delta_Plc = s * dtlc;
     startP = delta_qlc * Eigen::Vector3d(cloud->points[i].x, cloud->points[i].y, cloud->points[i].z) + delta_Plc;
     Eigen::Vector3d _po = dRlc.transpose() * (startP - dtlc);
@@ -365,8 +354,8 @@ bool TryMAPInitialization()
   }
 
   // //if IMU success initialized
-  WINDOWSIZE = Estimator::SLIDEWINDOWSIZE;
-  while (lidarFrameList->size() > WINDOWSIZE)
+  WINDOWSIZE = LIO::SLIDEWINDOWSIZE;
+  while (lidarFrameList->size() > WINDOWSIZE) //  保证list中frame数目为2
   {
     lidarFrameList->pop_front();
   }
@@ -375,7 +364,9 @@ bool TryMAPInitialization()
   lidarFrameList->back().P = Pwl + Qwl * exPlb;
   lidarFrameList->back().Q = Qwl * exRlb;
 
-  // std::cout << "\n=============================\n| Initialization Successful |"<<"\n=============================\n" << std::endl;
+  std::cout << "\n==========================================================\n|               Initialization Successful                 |"
+            << "\n==========================================================\n"
+            << std::endl;
 
   return true;
 }
@@ -408,6 +399,7 @@ void process()
 
     if (newfullCloud)
     {
+
       nav_msgs::Odometry debugInfo;
       debugInfo.pose.pose.position.x = 0;
       debugInfo.pose.pose.position.y = 0;
@@ -428,11 +420,11 @@ void process()
         }
       }
       // this lidar frame init
-      Estimator::LidarFrame lidarFrame;
+      LIO::LidarFrame lidarFrame;
       lidarFrame.laserCloud = laserCloudFullRes;
       lidarFrame.timeStamp = time_curr_lidar;
 
-      boost::shared_ptr<std::list<Estimator::LidarFrame>> lidar_list;
+      boost::shared_ptr<std::list<LIO::LidarFrame>> lidar_list;
       if (!vimuMsg.empty())
       {
         if (!LidarIMUInited)
@@ -448,15 +440,19 @@ void process()
           Eigen::Matrix3d m3d = transformAftMapped.topLeftCorner(3, 3) * delta_Rb;
           lidarFrame.Q = m3d;
 
-          lidar_list.reset(new std::list<Estimator::LidarFrame>);
+          lidar_list.reset(new std::list<LIO::LidarFrame>);
           lidar_list->push_back(lidarFrame);
+          std::cout << __LINE__ << "not inited,add lidarframe +++++++++++++ " << lidar_list->size() << std::endl;
         }
         else
         {
           // if get IMU msg successfully, use pre-integration to update delta lidar pose
           lidarFrame.imuIntegrator.PushIMUMsg(vimuMsg);
           lidarFrame.imuIntegrator.PreIntegration(lidarFrameList->back().timeStamp, lidarFrameList->back().bg, lidarFrameList->back().ba);
-
+          std::cout << "bg: " << lidarFrameList->back().bg[0] << " " << lidarFrameList->back().bg[1]
+                    << " " << lidarFrameList->back().bg[2] << " ,bgnorm: " << lidarFrameList->back().bg.norm()
+                    << " ba: " << lidarFrameList->back().ba[0] << " " << lidarFrameList->back().ba[1]
+                    << " " << lidarFrameList->back().ba[2] << " ,banorm: " << lidarFrameList->back().ba.norm() << std::endl;
           const Eigen::Vector3d &Pwbpre = lidarFrameList->back().P;
           const Eigen::Quaterniond &Qwbpre = lidarFrameList->back().Q;
           const Eigen::Vector3d &Vwbpre = lidarFrameList->back().V;
@@ -484,7 +480,7 @@ void process()
           delta_tb = dP;
 
           lidarFrameList->push_back(lidarFrame);
-          lidarFrameList->pop_front();
+          lidarFrameList->pop_front(); //  放入一个frame,弹出一个frame
           lidar_list = lidarFrameList;
         }
       }
@@ -499,8 +495,9 @@ void process()
           Eigen::Matrix3d m3d = transformAftMapped.topLeftCorner(3, 3) * delta_Rb;
           lidarFrame.Q = m3d;
 
-          lidar_list.reset(new std::list<Estimator::LidarFrame>);
+          lidar_list.reset(new std::list<LIO::LidarFrame>);
           lidar_list->push_back(lidarFrame);
+          std::cout << __LINE__ << ", no imu, add lidarframe +++++++++++++++" << lidar_list->size() << std::endl;
         }
       }
 
@@ -529,11 +526,6 @@ void process()
       transformAftMapped.topRightCorner(3, 1) = lidar_list->front().P;
 
       // publish odometry rostopic
-      {
-        std::cout.precision(8);
-        std::cout << "t:" << transformTobeMapped << "\nstamp:" << time_curr_lidar << std::endl;
-        std::cout << lidar_list->front().timeStamp << std::endl;
-      }
       pubOdometry(transformTobeMapped, lidar_list->front().timeStamp);
 
       // publish lidar points
@@ -594,20 +586,31 @@ void process()
 
           if (!LidarIMUInited && lidarFrameList->size() == WINDOWSIZE && lidarFrameList->front().timeStamp >= startTime)
           {
-            std::cout << "**************Start MAP Initialization!!!******************" << std::endl;
+            std::cout << "***********************************Start MAP Initialization!!!******************************" << std::endl;
             if (TryMAPInitialization())
             {
               LidarIMUInited = true;
               pushCount = 0;
               startTime = 0;
             }
-            std::cout << "**************Finish MAP Initialization!!!******************" << std::endl;
+            std::cout << "*********************************Finish MAP Initialization!!!*******************************" << std::endl;
           }
         }
       }
       time_last_lidar = time_curr_lidar;
     }
   }
+}
+
+sensor_msgs::PointCloud2 publishCloud(ros::Publisher &thisPub, pcl::PointCloud<PointType>::Ptr thisCloud /*, ros::Time thisStamp, std::string thisFrame*/)
+{
+  sensor_msgs::PointCloud2 tempCloud;
+  pcl::toROSMsg(*thisCloud, tempCloud);
+  tempCloud.header.stamp = ros::Time::now(); // thisStamp;
+  tempCloud.header.frame_id = "/world";      // thisFrame;
+  if (thisPub.getNumSubscribers() != 0)
+    thisPub.publish(tempCloud);
+  return tempCloud;
 }
 
 int main(int argc, char **argv)
@@ -644,20 +647,36 @@ int main(int argc, char **argv)
     sub_imu = nodeHandler.subscribe("/imu_data", 2000, imu_callback, ros::TransportHints().unreliable());
   if (IMU_Mode < 2)
     WINDOWSIZE = 1;
-  else
-    WINDOWSIZE = 20;
+  // else
+  //   WINDOWSIZE = 20;
 
   pubFullLaserCloud = nodeHandler.advertise<sensor_msgs::PointCloud2>("/full_cloud_mapped", 10);
   pubLaserOdometry = nodeHandler.advertise<nav_msgs::Odometry>("/odometry_mapped", 5);
   pubLaserOdometryPath = nodeHandler.advertise<nav_msgs::Path>("/odometry_path_mapped", 5);
 
   tfBroadcaster = new tf::TransformBroadcaster();
+  ros::Publisher pubLocalCorner = nodeHandler.advertise<sensor_msgs::PointCloud2>("local_corner_map", 1);
+  ros::Publisher pubLocalSurf = nodeHandler.advertise<sensor_msgs::PointCloud2>("local_surf_map", 1);
 
   laserCloudFullRes.reset(new pcl::PointCloud<PointType>);
-  estimator = new Estimator(filter_parameter_corner, filter_parameter_surf);
-  lidarFrameList.reset(new std::list<Estimator::LidarFrame>);
+  estimator = new LIO(filter_parameter_corner, filter_parameter_surf);
+
+  auto cloud_pub_func = std::function<bool(const std::string &topic_name, const pcl::PointCloud<PointType>::Ptr &cloud_ptr)>(
+      [&](const std::string &topic_name, const pcl::PointCloud<PointType>::Ptr &cloud_ptr)
+      {
+        if (topic_name == "corner")
+          publishCloud(pubLocalCorner, cloud_ptr);
+        else if (topic_name == "surf")
+          publishCloud(pubLocalSurf, cloud_ptr);
+        return true;
+      });
+
+  estimator->setPublishHandle(cloud_pub_func);
+
+  lidarFrameList.reset(new std::list<LIO::LidarFrame>);
 
   std::thread thread_process{process};
+  ROS_INFO("\033[1;32m----> Pose Estimate Started.\033[0m");
   ros::spin();
 
   return 0;

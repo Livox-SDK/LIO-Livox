@@ -60,9 +60,6 @@ public:
     string pointCloudTopic;
     // Frames
     string lidarFrame;
-    // Save pcd
-    bool savePCD;
-    string savePCDDirectory;
 
     // Lidar Sensor Configuration
     SensorType sensor;
@@ -120,8 +117,6 @@ public:
     {
         nh.param<std::string>("lio_sam/pointCloudTopic", pointCloudTopic, "points_raw");
         nh.param<std::string>("lio_sam/lidarFrame", lidarFrame, "base_link");
-        nh.param<bool>("lio_sam/savePCD", savePCD, false);
-        nh.param<std::string>("lio_sam/savePCDDirectory", savePCDDirectory, "/Downloads/LOAM/");
 
         std::string sensorStr;
         nh.param<std::string>("lio_sam/sensor", sensorStr, "");

@@ -113,3 +113,16 @@ target_link_libraries(${PROJECT_NAME}_poseEstimate
                       ${PCL_LIBRARIES} 
                       ${OpenCV_LIBRARIES} 
                       ${CERES_LIBRARIES} )
+					  
+add_executable(${PROJECT_NAME}_lio_odometry
+                      src/lio_ikd/lio_odometry.cpp 
+                      src/lio_ikd/lio.cpp 
+                      include/ikd-Tree/ikd_Tree.cpp
+                      src/lio/IMUIntegrator.cpp
+                      src/lio/ceresfunc.cpp 
+                      src/lio/Map_Manager.cpp)
+target_link_libraries(${PROJECT_NAME}_lio_odometry 
+                              ${catkin_LIBRARIES}  
+                              ${PCL_LIBRARIES} 
+                              ${OpenCV_LIBRARIES} 
+                              ${CERES_LIBRARIES} )
