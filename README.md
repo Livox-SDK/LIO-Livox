@@ -14,7 +14,7 @@ This repository is a modified LiDAR-inertial odometry system for Spinning LiDAR.
 
   - Feature extract moudle is implemented based on lio-sam, this moudle support velodyne,ouster and livox lidar;
   - Modify the PoseEstimation moudle, and the new front-end use Quaternion , **not rely on sophus**,--[**This part is not uploaded to the repository**].
-  - map manager use ikdtree instead of the original two individual (global & local) map [**This part is not uploaded to the repository**]；
+  - map manager use ikdtree instead of the original two individual (global & local) map；
 
 ## demo
 
@@ -44,6 +44,10 @@ This repository is a modified LiDAR-inertial odometry system for Spinning LiDAR.
 </div>
 
 map manager use ikdtree instead of the original two individual (global & local) map.
+
+### notes
+
+- Ikd-tree is not necessarily a good way when you need to re-search the nearest neighbor points every time.It takes more time than the original KDTree.you can have a look [here](https://github.com/LimHyungTae/ikd_tree_ros)
 
 --------------=----------------------------  divide line  ----------------------------------------------
 
