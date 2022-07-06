@@ -13,8 +13,13 @@ This repository is a modified LiDAR-inertial odometry system for Spinning LiDAR.
 ## Modification
 
   - Feature extract moudle is implemented based on lio-sam, this moudle support velodyne,ouster and livox lidar;
-  - Modify the PoseEstimation moudle, and the new front-end use Quaternion , **not rely on sophus**,--[**This part is not uploaded to the repository**].
+  - Modify the PoseEstimation moudle , **not rely on sophus**,--[**This part is not uploaded to the repository**].
   - map manager use ikdtree instead of the original two individual (global & local) map；
+  
+  [update 2022-07-06]
+
+  - use mid-integrate instead of euler-integrate;
+  - use analytic derivative instead of automatic derivative(lidar-factor and imu-factor);
 
 ## demo
 
@@ -37,7 +42,7 @@ This repository is a modified LiDAR-inertial odometry system for Spinning LiDAR.
 - city road test with vlp-16 vehicle-mounted  [bilibili video](https://www.bilibili.com/video/BV1wZ4y1174Z?spm_id_from=333.337.search-card.all.click) 
 - city road test with OS1-32, riding a scooter [bilibili video](https://www.bilibili.com/video/BV1UR4y1N7rs?spm_id_from=333.337.search-card.all.click)
 
-##	time compare
+##	time compare (ikdtree and the original)
 
 <div align="center">
 <img src="./doc/time0.png" width="1000px">
@@ -48,6 +53,18 @@ map manager use ikdtree instead of the original two individual (global & local) 
 ### notes
 
 - Ikd-tree is not necessarily a good way when you need to re-search the nearest neighbor points every time.It takes more time than the original KDTree.you can have a look [here](https://github.com/LimHyungTae/ikd_tree_ros)
+
+## new PoseEstimation [update 2022-07-06]
+
+delta_R and delta_T [the difference between (imu preintegrate) predict pose and the optimized pose]
+<div align="center">
+<img src="./doc/gr_loam_and_gr_lio_analytic.png" width="1000px">
+</div>
+
+Time about process a frame lidar data.
+<div align="center">
+<img src="./doc/gr_loam_and_gr_lio_analytic_t.png" width="1000px">
+</div>
 
 --------------=----------------------------  divide line  ----------------------------------------------
 
