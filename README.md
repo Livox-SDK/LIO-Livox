@@ -56,16 +56,28 @@ map manager use ikdtree instead of the original two individual (global & local) 
 
 ## new PoseEstimation [update 2022-07-06]
 
-#### corresponding test [VIDEO](https://www.bilibili.com/video/BV1na41197FZ?spm_id_from=333.999.0.0&vd_source=438f630fe29bd5049b24c7f05b1bcaa3)
+#### Test with ouster-OS1-32, corresponding test [VIDEO](https://www.bilibili.com/video/BV1na41197FZ?spm_id_from=333.999.0.0&vd_source=438f630fe29bd5049b24c7f05b1bcaa3)
 
 delta_R and delta_T [the difference between (imu preintegrate) predict pose and the optimized pose]
 <div align="center">
 <img src="./doc/gr_loam_and_gr_lio_analytic.png" width="1000px">
 </div>
 
-Time about process a frame lidar data.
+Time about process one frame lidar data.
 <div align="center">
 <img src="./doc/gr_loam_and_gr_lio_analytic_t.png" width="1000px">
+</div>
+
+#### Test with velodyne-16(lio-sam dataset: park)
+
+delta_R and delta_T [the difference between (imu preintegrate) predict pose and the optimized pose]
+<div align="center">
+<img src="./doc/gr_loam_and_gr_lio_analytic_v16.png" width="1000px">
+</div>
+
+Time about process one frame lidar data.
+<div align="center">
+<img src="./doc/gr_loam_and_gr_lio_analytic_t_v16.png" width="1000px">
 </div>
 
 --------------=----------------------------  divide line  ----------------------------------------------
