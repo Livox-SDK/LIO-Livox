@@ -56,6 +56,8 @@ map manager use ikdtree instead of the original two individual (global & local) 
 
 ## new PoseEstimation [update 2022-07-06]
 
+#### corresponding test [VIDEO](https://www.bilibili.com/video/BV1na41197FZ?spm_id_from=333.999.0.0&vd_source=438f630fe29bd5049b24c7f05b1bcaa3)
+
 delta_R and delta_T [the difference between (imu preintegrate) predict pose and the optimized pose]
 <div align="center">
 <img src="./doc/gr_loam_and_gr_lio_analytic.png" width="1000px">
