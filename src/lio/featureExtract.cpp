@@ -25,7 +25,7 @@
 #include <mutex>
 #include <chrono>
 
-#include "GC_LOAM/cloud_info.h"
+#include "cloud_info.h"
 #include "my_utility.h"
 
 using namespace std;
@@ -33,7 +33,8 @@ using namespace std;
 enum class SensorType
 {
     VELODYNE,
-    OUSTER
+    OUSTER,
+    ROBOSENSE
 };
 
 struct smoothness_t
@@ -77,6 +78,7 @@ public:
 
     pcl::PointCloud<PointXYZIRT>::Ptr laserCloudIn;
     pcl::PointCloud<OusterPointXYZIRT>::Ptr tmpOusterCloudIn;
+    pcl::PointCloud<rsPointXYZIRT>::Ptr tmpRSCloudIn;
     pcl::PointCloud<PointType>::Ptr inputCloud;
     pcl::PointCloud<PointType>::Ptr fullCloud;
     pcl::PointCloud<PointType>::Ptr extractedCloud;
@@ -115,11 +117,11 @@ public:
 
     FeatureExtract()
     {
-        nh.param<std::string>("lio_sam/pointCloudTopic", pointCloudTopic, "points_raw");
-        nh.param<std::string>("lio_sam/lidarFrame", lidarFrame, "base_link");
+        nh.param<std::string>("pointCloudTopic", pointCloudTopic, "points_raw");
+        nh.param<std::string>("lidarFrame", lidarFrame, "base_link");
 
         std::string sensorStr;
-        nh.param<std::string>("lio_sam/sensor", sensorStr, "");
+        nh.param<std::string>("sensor", sensorStr, "");
         if (sensorStr == "velodyne")
         {
             sensor = SensorType::VELODYNE;
@@ -128,33 +130,37 @@ public:
         {
             sensor = SensorType::OUSTER;
         }
+        else if (sensorStr == "robosense")
+        {
+            sensor = SensorType::ROBOSENSE;
+        }
         else
         {
             ROS_ERROR_STREAM(
-                "Invalid sensor type (must be either 'velodyne' or 'ouster'): " << sensorStr);
+                "Invalid sensor type (must be either 'velodyne' 'ouster' or 'robosense'): " << sensorStr);
             ros::shutdown();
         }
-        nh.param<int>("lio_sam/N_SCAN", N_SCAN, 16);
-        nh.param<int>("lio_sam/Horizon_SCAN", Horizon_SCAN, 1800);
-        nh.param<int>("lio_sam/downsampleRate", downsampleRate, 1);
-        nh.param<float>("lio_sam/lidarMinRange", lidarMinRange, 1.0);
-        nh.param<float>("lio_sam/lidarMaxRange", lidarMaxRange, 1000.0);
+        nh.param<int>("N_SCAN", N_SCAN, 16);
+        nh.param<int>("Horizon_SCAN", Horizon_SCAN, 1800);
+        nh.param<int>("downsampleRate", downsampleRate, 1);
+        nh.param<float>("lidarMinRange", lidarMinRange, 1.0);
+        nh.param<float>("lidarMaxRange", lidarMaxRange, 1000.0);
 
-        nh.param<float>("lio_sam/edgeThreshold", edgeThreshold, 0.1);
-        nh.param<float>("lio_sam/surfThreshold", surfThreshold, 0.1);
-        nh.param<int>("lio_sam/edgeFeatureMinValidNum", edgeFeatureMinValidNum, 10);
-        nh.param<int>("lio_sam/surfFeatureMinValidNum", surfFeatureMinValidNum, 100);
+        nh.param<float>("edgeThreshold", edgeThreshold, 0.1);
+        nh.param<float>("surfThreshold", surfThreshold, 0.1);
+        nh.param<int>("edgeFeatureMinValidNum", edgeFeatureMinValidNum, 10);
+        nh.param<int>("surfFeatureMinValidNum", surfFeatureMinValidNum, 100);
 
-        nh.param<float>("lio_sam/odometrySurfLeafSize", odometrySurfLeafSize, 0.2);
-        nh.param<float>("lio_sam/mappingCornerLeafSize", mappingCornerLeafSize, 0.2);
-        nh.param<float>("lio_sam/mappingSurfLeafSize", mappingSurfLeafSize, 0.2);
+        nh.param<float>("odometrySurfLeafSize", odometrySurfLeafSize, 0.2);
+        nh.param<float>("mappingCornerLeafSize", mappingCornerLeafSize, 0.2);
+        nh.param<float>("mappingSurfLeafSize", mappingSurfLeafSize, 0.2);
 
         subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>(pointCloudTopic, 50, &FeatureExtract::cloudHandler, this);
 
-        pubCornerPoints = nh.advertise<sensor_msgs::PointCloud2>("lio_sam/feature/cloud_corner", 1);
-        pubSurfacePoints = nh.advertise<sensor_msgs::PointCloud2>("lio_sam/feature/cloud_surface", 1);
-        pubFullPoints = nh.advertise<sensor_msgs::PointCloud2>("/full_cloud", 10);
-        pubLaserCloudInfo = nh.advertise<GC_LOAM::cloud_info>("lio_sam/feature/cloud_info", 1);
+        pubCornerPoints = nh.advertise<sensor_msgs::PointCloud2>("/laser_cloud_edge", 1);
+        pubSurfacePoints = nh.advertise<sensor_msgs::PointCloud2>("/laser_cloud_surf", 1);
+        pubFullPoints = nh.advertise<sensor_msgs::PointCloud2>("/laser_cloud_filtered", 10);
+        pubLaserCloudInfo = nh.advertise<GC_LOAM::cloud_info>("/feature/cloud_info", 1);
 
         allocateMemory();
         resetParameters();
@@ -163,6 +169,7 @@ public:
     {
         laserCloudIn.reset(new pcl::PointCloud<PointXYZIRT>());
         tmpOusterCloudIn.reset(new pcl::PointCloud<OusterPointXYZIRT>());
+        tmpRSCloudIn.reset(new pcl::PointCloud<rsPointXYZIRT>());
         inputCloud.reset(new pcl::PointCloud<PointType>());
         fullCloud.reset(new pcl::PointCloud<PointType>());
         extractedCloud.reset(new pcl::PointCloud<PointType>());
@@ -220,7 +227,7 @@ public:
         // std::cout << "laserCloudInfoHandler takes: " << (t2 - t1).toSec() * 1000 << "ms" << std::endl;
         resetParameters();
     }
-
+#define TEST_LIO_SAM_6AXIS_DATA
     bool cachePointCloud(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
     {
         sensor_msgs::PointCloud2 currentCloudMsg = *laserCloudMsg;
@@ -230,7 +237,11 @@ public:
             pcl::moveFromROSMsg(currentCloudMsg, *laserCloudIn);
             inputCloud->points.resize(laserCloudIn->size());
             inputCloud->is_dense = laserCloudIn->is_dense;
+#ifdef TEST_LIO_SAM_6AXIS_DATA
             timespan = laserCloudIn->points.back().time;
+#else
+            timespan = laserCloudIn->points.back().time - laserCloudIn->points[0].time;
+#endif
             for (size_t i = 0; i < laserCloudIn->size(); i++)
             {
                 auto &src = laserCloudIn->points[i];
@@ -241,8 +252,16 @@ public:
                 dst.intensity = src.intensity;
                 dst.normal_y = src.ring; //  ring
                 dst.normal_z = 0;
+#ifdef TEST_LIO_SAM_6AXIS_DATA
                 dst.normal_x = src.time / timespan;
+#else
+                dst.normal_x = (src.time + timespan) / timespan;
+#endif
             }
+#ifndef TEST_LIO_SAM_6AXIS_DATA
+            timespan = 0.0;
+#endif
+            // std::cout << "stamp: " << laserCloudIn->points[0].time << "," << laserCloudIn->points[100].time << ", " << laserCloudIn->points.back().time << std::endl;
         }
         else if (sensor == SensorType::OUSTER)
         {
@@ -272,6 +291,36 @@ public:
             //     std::cout << tmpOusterCloudIn->points[i].t * 1e-9f << " ,";
             // std::cout << std::endl;
         }
+        else if (sensor == SensorType::ROBOSENSE)
+        {
+            //  FIXME: robosense时间戳为最后一个点的数据
+            pcl::fromROSMsg(currentCloudMsg, *tmpRSCloudIn);
+            // inputCloud->points.resize(tmpRSCloudIn->size());
+            // inputCloud->is_dense = tmpRSCloudIn->is_dense;
+            timespan = tmpRSCloudIn->points[tmpRSCloudIn->size() - 1].timestamp - tmpRSCloudIn->points[0].timestamp;
+            std::cout << "fist: " << tmpRSCloudIn->points[1].timestamp
+                      << ", 100: " << tmpRSCloudIn->points[100].timestamp
+                      << ",intervel: " << tmpRSCloudIn->points[tmpRSCloudIn->size() - 1].timestamp - tmpRSCloudIn->points[0].timestamp
+                      << ",t: " << tmpRSCloudIn->points[0].timestamp - currentCloudMsg.header.stamp.toSec()
+                      << "timespan: " << timespan << std::endl;
+            for (size_t i = 0; i < tmpRSCloudIn->size(); i++)
+            {
+                auto &src = tmpRSCloudIn->points[i];
+                if (!pcl_isfinite(src.x) || !pcl_isfinite(src.y) || !pcl_isfinite(src.z))
+                    continue;
+
+                PointType dst;
+                dst.x = src.x;
+                dst.y = src.y;
+                dst.z = src.z;
+                dst.intensity = src.intensity;
+                dst.normal_y = src.ring;
+                dst.normal_z = 0;
+                dst.normal_x = (src.timestamp - tmpRSCloudIn->points[0].timestamp) / timespan;
+                inputCloud->push_back(dst);
+            }
+            timespan = 0.0;
+        }
         else
         {
             ROS_ERROR_STREAM("Unknown sensor type: " << int(sensor));
@@ -282,7 +331,7 @@ public:
         cloudHeader = currentCloudMsg.header;
         timeScanCur = cloudHeader.stamp.toSec();
         timeScanEnd = timeScanCur + timespan; // inputCloud->points.back().normal_x;
-        std::cout << "timeC:" << timeScanCur << "," << timespan << std::endl;
+        // std::cout << "timeC:" << timeScanCur << "," << timespan << std::endl;
 
         // check dense flag
         if (inputCloud->is_dense == false)
@@ -570,7 +619,7 @@ public:
         // save newly extracted features
         cloudInfo.cloud_corner = publishCloud(&pubCornerPoints, cornerCloud, cloudHeader.stamp, lidarFrame);
         cloudInfo.cloud_surface = publishCloud(&pubSurfacePoints, surfaceCloud, cloudHeader.stamp, lidarFrame);
-        cloudHeader.stamp = ros::Time().fromSec(timeScanEnd);
+        cloudHeader.stamp = ros::Time().fromSec(timeScanEnd); // lio used
         publishCloud(&pubFullPoints, extractedCloud, cloudHeader.stamp, lidarFrame);
         // publish to mapOptimization
         pubLaserCloudInfo.publish(cloudInfo);
@@ -579,7 +628,7 @@ public:
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "GC_LOAM");
+    ros::init(argc, argv, "GC_LIO");
 
     FeatureExtract FE;
 

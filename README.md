@@ -72,12 +72,24 @@ Time about process one frame lidar data.
 
 delta_R and delta_T [the difference between (imu preintegrate) predict pose and the optimized pose]
 <div align="center">
-<img src="./doc/gr_loam_and_gr_lio_analytic_v16.png" width="1000px">
+<img src="./doc/park_rt.png" width="1000px">
 </div>
 
 Time about process one frame lidar data.
 <div align="center">
-<img src="./doc/gr_loam_and_gr_lio_analytic_t_v16.png" width="1000px">
+<img src="./doc/park_t.png" width="1000px">
+</div>
+
+#### Test with velodyne-16(lio-sam dataset: casual_walk)
+
+delta_R and delta_T [the difference between (imu preintegrate) predict pose and the optimized pose]
+<div align="center">
+<img src="./doc/casual_walk_rt.png" width="1000px">
+</div>
+
+Time about process one frame lidar data.
+<div align="center">
+<img src="./doc/casual_walk_t.png" width="1000px">
 </div>
 
 --------------=----------------------------  divide line  ----------------------------------------------
