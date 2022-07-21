@@ -28,11 +28,6 @@ This repository is a modified LiDAR-inertial odometry system for Spinning LiDAR.
 <img src="./doc/lio-livox.gif" width="1000px">
 </div>
 
-**Test with ouster-64(os1), this data is collected on a ground robot(max speed 1.2m/s)**
-<div align="center">
-<img src="./doc/lio-sam2.gif" width="1000px">
-</div>
-
 **Test with west.bag(lio-sam)**
 <div align="center">
 <img src="./doc/west.png" width="1000px">
@@ -90,6 +85,38 @@ delta_R and delta_T [the difference between (imu preintegrate) predict pose and 
 Time about process one frame lidar data.
 <div align="center">
 <img src="./doc/casual_walk_t.png" width="1000px">
+</div>
+
+#### Test with velodyne-16(LIO_SAM_6AXIS dataset: hkust_20201105full)
+
+delta_R and delta_T [the difference between (imu preintegrate) predict pose and the optimized pose]
+<div align="center">
+<img src="./doc/hkust_20201105full_rt.png" width="1000px">
+</div>
+
+Time about process one frame lidar data.
+<div align="center">
+<img src="./doc/hkust_20201105full_t.png" width="1000px">
+</div>
+
+evo_ape test
+<div align="center">
+<img src="./doc/hkust_20201105full_ape.png" width="1000px">
+</div>
+
+evo_rpe test
+<div align="center">
+<img src="./doc/hkust_20201105full_rpe.png" width="1000px">
+</div>
+
+evo_traj test
+<div align="center">
+<img src="./doc/hkust_20201105full_traj_xyz.png" width="1000px">
+</div>
+
+evo_traj test
+<div align="center">
+<img src="./doc/hkust_20201105full_traj_rpy.png" width="1000px">
 </div>
 
 --------------=----------------------------  divide line  ----------------------------------------------
