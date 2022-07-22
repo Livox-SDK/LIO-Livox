@@ -1,26 +1,27 @@
 #include "Estimator/Estimator.h"
 
-Estimator::Estimator(const float& filter_corner, const float& filter_surf){
+Estimator::Estimator(const float &filter_corner, const float &filter_surf)
+{
   laserCloudCornerFromLocal.reset(new pcl::PointCloud<PointType>);
   laserCloudSurfFromLocal.reset(new pcl::PointCloud<PointType>);
   laserCloudNonFeatureFromLocal.reset(new pcl::PointCloud<PointType>);
   laserCloudCornerLast.resize(SLIDEWINDOWSIZE);
-  for(auto& p:laserCloudCornerLast)
+  for (auto &p : laserCloudCornerLast)
     p.reset(new pcl::PointCloud<PointType>);
   laserCloudSurfLast.resize(SLIDEWINDOWSIZE);
-  for(auto& p:laserCloudSurfLast)
+  for (auto &p : laserCloudSurfLast)
     p.reset(new pcl::PointCloud<PointType>);
   laserCloudNonFeatureLast.resize(SLIDEWINDOWSIZE);
-  for(auto& p:laserCloudNonFeatureLast)
+  for (auto &p : laserCloudNonFeatureLast)
     p.reset(new pcl::PointCloud<PointType>);
   laserCloudCornerStack.resize(SLIDEWINDOWSIZE);
-  for(auto& p:laserCloudCornerStack)
+  for (auto &p : laserCloudCornerStack)
     p.reset(new pcl::PointCloud<PointType>);
   laserCloudSurfStack.resize(SLIDEWINDOWSIZE);
-  for(auto& p:laserCloudSurfStack)
+  for (auto &p : laserCloudSurfStack)
     p.reset(new pcl::PointCloud<PointType>);
   laserCloudNonFeatureStack.resize(SLIDEWINDOWSIZE);
-  for(auto& p:laserCloudNonFeatureStack)
+  for (auto &p : laserCloudNonFeatureStack)
     p.reset(new pcl::PointCloud<PointType>);
   laserCloudCornerForMap.reset(new pcl::PointCloud<PointType>);
   laserCloudSurfForMap.reset(new pcl::PointCloud<PointType>);
@@ -30,7 +31,8 @@ Estimator::Estimator(const float& filter_corner, const float& filter_surf){
   kdtreeSurfFromLocal.reset(new pcl::KdTreeFLANN<PointType>);
   kdtreeNonFeatureFromLocal.reset(new pcl::KdTreeFLANN<PointType>);
 
-  for(int i = 0; i < localMapWindowSize; i++){
+  for (int i = 0; i < localMapWindowSize; i++)
+  {
     localCornerMap[i].reset(new pcl::PointCloud<PointType>);
     localSurfMap[i].reset(new pcl::PointCloud<PointType>);
     localNonFeatureMap[i].reset(new pcl::PointCloud<PointType>);
@@ -43,11 +45,13 @@ Estimator::Estimator(const float& filter_corner, const float& filter_surf){
   threadMap = std::thread(&Estimator::threadMapIncrement, this);
 }
 
-Estimator::~Estimator(){
+Estimator::~Estimator()
+{
   delete map_manager;
 }
 
-[[noreturn]] void Estimator::threadMapIncrement(){
+[[noreturn]] void Estimator::threadMapIncrement()
+{
   pcl::PointCloud<PointType>::Ptr laserCloudCorner(new pcl::PointCloud<PointType>);
   pcl::PointCloud<PointType>::Ptr laserCloudSurf(new pcl::PointCloud<PointType>);
   pcl::PointCloud<PointType>::Ptr laserCloudNonFeature(new pcl::PointCloud<PointType>);
@@ -55,12 +59,14 @@ Estimator::~Estimator(){
   pcl::PointCloud<PointType>::Ptr laserCloudSurf_to_map(new pcl::PointCloud<PointType>);
   pcl::PointCloud<PointType>::Ptr laserCloudNonFeature_to_map(new pcl::PointCloud<PointType>);
   Eigen::Matrix4d transform;
-  while(true){
+  while (true)
+  {
     std::unique_lock<std::mutex> locker(mtx_Map);
-    if(!laserCloudCornerForMap->empty()){
+    if (!laserCloudCornerForMap->empty())
+    {
 
-      map_update_ID ++;
-
+      map_update_ID++;
+      //  cornerForMap数据存入corner
       map_manager->featureAssociateToMap(laserCloudCornerForMap,
                                          laserCloudSurfForMap,
                                          laserCloudNonFeatureForMap,
@@ -82,9 +88,10 @@ Estimator::~Estimator(){
       laserCloudSurf->clear();
       laserCloudNonFeature->clear();
 
-      if(map_update_ID % map_skip_frame == 0){
-        map_manager->MapIncrement(laserCloudCorner_to_map, 
-                                  laserCloudSurf_to_map, 
+      if (map_update_ID % map_skip_frame == 0)
+      {
+        map_manager->MapIncrement(laserCloudCorner_to_map,
+                                  laserCloudSurf_to_map,
                                   laserCloudNonFeature_to_map,
                                   transform);
 
@@ -92,8 +99,8 @@ Estimator::~Estimator(){
         laserCloudSurf_to_map->clear();
         laserCloudNonFeature_to_map->clear();
       }
-      
-    }else
+    }
+    else
       locker.unlock();
 
     std::chrono::milliseconds dura(2);
@@ -101,24 +108,27 @@ Estimator::~Estimator(){
   }
 }
 
-void Estimator::processPointToLine(std::vector<ceres::CostFunction *>& edges,
-                                   std::vector<FeatureLine>& vLineFeatures,
-                                   const pcl::PointCloud<PointType>::Ptr& laserCloudCorner,
-                                   const pcl::PointCloud<PointType>::Ptr& laserCloudCornerLocal,
-                                   const pcl::KdTreeFLANN<PointType>::Ptr& kdtreeLocal,
-                                   const Eigen::Matrix4d& exTlb,
-                                   const Eigen::Matrix4d& m4d){
+void Estimator::processPointToLine(std::vector<ceres::CostFunction *> &edges,
+                                   std::vector<FeatureLine> &vLineFeatures,
+                                   const pcl::PointCloud<PointType>::Ptr &laserCloudCorner,
+                                   const pcl::PointCloud<PointType>::Ptr &laserCloudCornerLocal,
+                                   const pcl::KdTreeFLANN<PointType>::Ptr &kdtreeLocal,
+                                   const Eigen::Matrix4d &exTlb,
+                                   const Eigen::Matrix4d &m4d)
+{
 
   Eigen::Matrix4d Tbl = Eigen::Matrix4d::Identity();
-  Tbl.topLeftCorner(3,3) = exTlb.topLeftCorner(3,3).transpose();
-  Tbl.topRightCorner(3,1) = -1.0 * Tbl.topLeftCorner(3,3) * exTlb.topRightCorner(3,1);
-  if(!vLineFeatures.empty()){
-    for(const auto& l : vLineFeatures){
-      auto* e = Cost_NavState_IMU_Line::Create(l.pointOri,
+  Tbl.topLeftCorner(3, 3) = exTlb.topLeftCorner(3, 3).transpose();
+  Tbl.topRightCorner(3, 1) = -1.0 * Tbl.topLeftCorner(3, 3) * exTlb.topRightCorner(3, 1);
+  if (!vLineFeatures.empty())
+  {
+    for (const auto &l : vLineFeatures)
+    {
+      auto *e = Cost_NavState_IMU_Line::Create(l.pointOri,
                                                l.lineP1,
                                                l.lineP2,
                                                Tbl,
-                                               Eigen::Matrix<double, 1, 1>(1/IMUIntegrator::lidar_m));
+                                               Eigen::Matrix<double, 1, 1>(1 / IMUIntegrator::lidar_m));
       edges.push_back(e);
     }
     return;
@@ -129,7 +139,7 @@ void Estimator::processPointToLine(std::vector<ceres::CostFunction *>& edges,
   std::vector<int> _pointSearchInd2;
   std::vector<float> _pointSearchSqDis2;
 
-  Eigen::Matrix< double, 3, 3 > _matA1;
+  Eigen::Matrix<double, 3, 3> _matA1;
   _matA1.setZero();
 
   int laserCloudCornerStackNum = laserCloudCorner->points.size();
@@ -138,109 +148,118 @@ void Estimator::processPointToLine(std::vector<ceres::CostFunction *>& edges,
   int debug_num2 = 0;
   int debug_num12 = 0;
   int debug_num22 = 0;
-  for (int i = 0; i < laserCloudCornerStackNum; i++) {
+  for (int i = 0; i < laserCloudCornerStackNum; i++)
+  {
     _pointOri = laserCloudCorner->points[i];
     MAP_MANAGER::pointAssociateToMap(&_pointOri, &_pointSel, m4d);
-    int id = map_manager->FindUsedCornerMap(&_pointSel,laserCenWidth_last,laserCenHeight_last,laserCenDepth_last);
+    int id = map_manager->FindUsedCornerMap(&_pointSel, laserCenWidth_last, laserCenHeight_last, laserCenDepth_last);
 
-    if(id == 5000) continue;
+    if (id == 5000)
+      continue;
 
-    if(std::isnan(_pointSel.x) || std::isnan(_pointSel.y) ||std::isnan(_pointSel.z)) continue;
+    if (std::isnan(_pointSel.x) || std::isnan(_pointSel.y) || std::isnan(_pointSel.z))
+      continue;
 
-    if(GlobalCornerMap[id].points.size() > 100) {
+    if (GlobalCornerMap[id].points.size() > 100)
+    {
       CornerKdMap[id].nearestKSearch(_pointSel, 5, _pointSearchInd, _pointSearchSqDis);
-      
-      if (_pointSearchSqDis[4] < thres_dist) {
 
-        debug_num1 ++;
-      float cx = 0;
-      float cy = 0;
-      float cz = 0;
-      for (int j = 0; j < 5; j++) {
-        cx += GlobalCornerMap[id].points[_pointSearchInd[j]].x;
-        cy += GlobalCornerMap[id].points[_pointSearchInd[j]].y;
-        cz += GlobalCornerMap[id].points[_pointSearchInd[j]].z;
-      }
-      cx /= 5;
-      cy /= 5;
-      cz /= 5;
+      if (_pointSearchSqDis[4] < thres_dist)
+      {
 
-      float a11 = 0;
-      float a12 = 0;
-      float a13 = 0;
-      float a22 = 0;
-      float a23 = 0;
-      float a33 = 0;
-      for (int j = 0; j < 5; j++) {
-        float ax = GlobalCornerMap[id].points[_pointSearchInd[j]].x - cx;
-        float ay = GlobalCornerMap[id].points[_pointSearchInd[j]].y - cy;
-        float az = GlobalCornerMap[id].points[_pointSearchInd[j]].z - cz;
-
-        a11 += ax * ax;
-        a12 += ax * ay;
-        a13 += ax * az;
-        a22 += ay * ay;
-        a23 += ay * az;
-        a33 += az * az;
-      }
-      a11 /= 5;
-      a12 /= 5;
-      a13 /= 5;
-      a22 /= 5;
-      a23 /= 5;
-      a33 /= 5;
-
-      _matA1(0, 0) = a11;
-      _matA1(0, 1) = a12;
-      _matA1(0, 2) = a13;
-      _matA1(1, 0) = a12;
-      _matA1(1, 1) = a22;
-      _matA1(1, 2) = a23;
-      _matA1(2, 0) = a13;
-      _matA1(2, 1) = a23;
-      _matA1(2, 2) = a33;
-
-      Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> saes(_matA1);
-      Eigen::Vector3d unit_direction = saes.eigenvectors().col(2);
-
-      if (saes.eigenvalues()[2] > 3 * saes.eigenvalues()[1]) {
-        debug_num12 ++;
-        float x1 = cx + 0.1 * unit_direction[0];
-        float y1 = cy + 0.1 * unit_direction[1];
-        float z1 = cz + 0.1 * unit_direction[2];
-        float x2 = cx - 0.1 * unit_direction[0];
-        float y2 = cy - 0.1 * unit_direction[1];
-        float z2 = cz - 0.1 * unit_direction[2];
-
-        Eigen::Vector3d tripod1(x1, y1, z1);
-        Eigen::Vector3d tripod2(x2, y2, z2);
-        auto* e = Cost_NavState_IMU_Line::Create(Eigen::Vector3d(_pointOri.x,_pointOri.y,_pointOri.z),
-                                                 tripod1,
-                                                 tripod2,
-                                                 Tbl,
-                                                 Eigen::Matrix<double, 1, 1>(1/IMUIntegrator::lidar_m));
-        edges.push_back(e);
-        vLineFeatures.emplace_back(Eigen::Vector3d(_pointOri.x,_pointOri.y,_pointOri.z),
-                                   tripod1,
-                                   tripod2);
-        vLineFeatures.back().ComputeError(m4d);
-
-        continue;
-      }
-      
-    }
-    
-    }
-
-    if(laserCloudCornerLocal->points.size() > 20 ){
-      kdtreeLocal->nearestKSearch(_pointSel, 5, _pointSearchInd2, _pointSearchSqDis2);
-      if (_pointSearchSqDis2[4] < thres_dist) {
-
-        debug_num2 ++;
+        debug_num1++;
         float cx = 0;
         float cy = 0;
         float cz = 0;
-        for (int j = 0; j < 5; j++) {
+        for (int j = 0; j < 5; j++)
+        {
+          cx += GlobalCornerMap[id].points[_pointSearchInd[j]].x;
+          cy += GlobalCornerMap[id].points[_pointSearchInd[j]].y;
+          cz += GlobalCornerMap[id].points[_pointSearchInd[j]].z;
+        }
+        cx /= 5;
+        cy /= 5;
+        cz /= 5;
+
+        float a11 = 0;
+        float a12 = 0;
+        float a13 = 0;
+        float a22 = 0;
+        float a23 = 0;
+        float a33 = 0;
+        for (int j = 0; j < 5; j++)
+        {
+          float ax = GlobalCornerMap[id].points[_pointSearchInd[j]].x - cx;
+          float ay = GlobalCornerMap[id].points[_pointSearchInd[j]].y - cy;
+          float az = GlobalCornerMap[id].points[_pointSearchInd[j]].z - cz;
+
+          a11 += ax * ax;
+          a12 += ax * ay;
+          a13 += ax * az;
+          a22 += ay * ay;
+          a23 += ay * az;
+          a33 += az * az;
+        }
+        a11 /= 5;
+        a12 /= 5;
+        a13 /= 5;
+        a22 /= 5;
+        a23 /= 5;
+        a33 /= 5;
+
+        _matA1(0, 0) = a11;
+        _matA1(0, 1) = a12;
+        _matA1(0, 2) = a13;
+        _matA1(1, 0) = a12;
+        _matA1(1, 1) = a22;
+        _matA1(1, 2) = a23;
+        _matA1(2, 0) = a13;
+        _matA1(2, 1) = a23;
+        _matA1(2, 2) = a33;
+
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> saes(_matA1);
+        Eigen::Vector3d unit_direction = saes.eigenvectors().col(2);
+
+        if (saes.eigenvalues()[2] > 3 * saes.eigenvalues()[1])
+        {
+          debug_num12++;
+          float x1 = cx + 0.1 * unit_direction[0];
+          float y1 = cy + 0.1 * unit_direction[1];
+          float z1 = cz + 0.1 * unit_direction[2];
+          float x2 = cx - 0.1 * unit_direction[0];
+          float y2 = cy - 0.1 * unit_direction[1];
+          float z2 = cz - 0.1 * unit_direction[2];
+
+          Eigen::Vector3d tripod1(x1, y1, z1);
+          Eigen::Vector3d tripod2(x2, y2, z2);
+          auto *e = Cost_NavState_IMU_Line::Create(Eigen::Vector3d(_pointOri.x, _pointOri.y, _pointOri.z),
+                                                   tripod1,
+                                                   tripod2,
+                                                   Tbl,
+                                                   Eigen::Matrix<double, 1, 1>(1 / IMUIntegrator::lidar_m));
+          edges.push_back(e);
+          vLineFeatures.emplace_back(Eigen::Vector3d(_pointOri.x, _pointOri.y, _pointOri.z),
+                                     tripod1,
+                                     tripod2);
+          vLineFeatures.back().ComputeError(m4d);
+
+          continue;
+        }
+      }
+    }
+
+    if (laserCloudCornerLocal->points.size() > 20)
+    {
+      kdtreeLocal->nearestKSearch(_pointSel, 5, _pointSearchInd2, _pointSearchSqDis2);
+      if (_pointSearchSqDis2[4] < thres_dist)
+      {
+
+        debug_num2++;
+        float cx = 0;
+        float cy = 0;
+        float cz = 0;
+        for (int j = 0; j < 5; j++)
+        {
           cx += laserCloudCornerLocal->points[_pointSearchInd2[j]].x;
           cy += laserCloudCornerLocal->points[_pointSearchInd2[j]].y;
           cz += laserCloudCornerLocal->points[_pointSearchInd2[j]].z;
@@ -255,7 +274,8 @@ void Estimator::processPointToLine(std::vector<ceres::CostFunction *>& edges,
         float a22 = 0;
         float a23 = 0;
         float a33 = 0;
-        for (int j = 0; j < 5; j++) {
+        for (int j = 0; j < 5; j++)
+        {
           float ax = laserCloudCornerLocal->points[_pointSearchInd2[j]].x - cx;
           float ay = laserCloudCornerLocal->points[_pointSearchInd2[j]].y - cy;
           float az = laserCloudCornerLocal->points[_pointSearchInd2[j]].z - cz;
@@ -284,10 +304,11 @@ void Estimator::processPointToLine(std::vector<ceres::CostFunction *>& edges,
         _matA1(2, 1) = a23;
         _matA1(2, 2) = a33;
 
-      Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> saes(_matA1);
-      Eigen::Vector3d unit_direction = saes.eigenvectors().col(2);
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> saes(_matA1);
+        Eigen::Vector3d unit_direction = saes.eigenvectors().col(2);
 
-        if (saes.eigenvalues()[2] > 3 * saes.eigenvalues()[1]) {
+        if (saes.eigenvalues()[2] > 3 * saes.eigenvalues()[1])
+        {
           debug_num22++;
           float x1 = cx + 0.1 * unit_direction[0];
           float y1 = cy + 0.1 * unit_direction[1];
@@ -298,42 +319,44 @@ void Estimator::processPointToLine(std::vector<ceres::CostFunction *>& edges,
 
           Eigen::Vector3d tripod1(x1, y1, z1);
           Eigen::Vector3d tripod2(x2, y2, z2);
-          auto* e = Cost_NavState_IMU_Line::Create(Eigen::Vector3d(_pointOri.x,_pointOri.y,_pointOri.z),
-                                                  tripod1,
-                                                  tripod2,
-                                                  Tbl,
-                                                  Eigen::Matrix<double, 1, 1>(1/IMUIntegrator::lidar_m));
+          auto *e = Cost_NavState_IMU_Line::Create(Eigen::Vector3d(_pointOri.x, _pointOri.y, _pointOri.z),
+                                                   tripod1,
+                                                   tripod2,
+                                                   Tbl,
+                                                   Eigen::Matrix<double, 1, 1>(1 / IMUIntegrator::lidar_m));
           edges.push_back(e);
-          vLineFeatures.emplace_back(Eigen::Vector3d(_pointOri.x,_pointOri.y,_pointOri.z),
-                                    tripod1,
-                                    tripod2);
+          vLineFeatures.emplace_back(Eigen::Vector3d(_pointOri.x, _pointOri.y, _pointOri.z),
+                                     tripod1,
+                                     tripod2);
           vLineFeatures.back().ComputeError(m4d);
         }
       }
     }
-     
   }
 }
 
-void Estimator::processPointToPlan(std::vector<ceres::CostFunction *>& edges,
-                                   std::vector<FeaturePlan>& vPlanFeatures,
-                                   const pcl::PointCloud<PointType>::Ptr& laserCloudSurf,
-                                   const pcl::PointCloud<PointType>::Ptr& laserCloudSurfLocal,
-                                   const pcl::KdTreeFLANN<PointType>::Ptr& kdtreeLocal,
-                                   const Eigen::Matrix4d& exTlb,
-                                   const Eigen::Matrix4d& m4d){
+void Estimator::processPointToPlan(std::vector<ceres::CostFunction *> &edges,
+                                   std::vector<FeaturePlan> &vPlanFeatures,
+                                   const pcl::PointCloud<PointType>::Ptr &laserCloudSurf,
+                                   const pcl::PointCloud<PointType>::Ptr &laserCloudSurfLocal,
+                                   const pcl::KdTreeFLANN<PointType>::Ptr &kdtreeLocal,
+                                   const Eigen::Matrix4d &exTlb,
+                                   const Eigen::Matrix4d &m4d)
+{
   Eigen::Matrix4d Tbl = Eigen::Matrix4d::Identity();
-  Tbl.topLeftCorner(3,3) = exTlb.topLeftCorner(3,3).transpose();
-  Tbl.topRightCorner(3,1) = -1.0 * Tbl.topLeftCorner(3,3) * exTlb.topRightCorner(3,1);
-  if(!vPlanFeatures.empty()){
-    for(const auto& p : vPlanFeatures){
-      auto* e = Cost_NavState_IMU_Plan::Create(p.pointOri,
+  Tbl.topLeftCorner(3, 3) = exTlb.topLeftCorner(3, 3).transpose();
+  Tbl.topRightCorner(3, 1) = -1.0 * Tbl.topLeftCorner(3, 3) * exTlb.topRightCorner(3, 1);
+  if (!vPlanFeatures.empty())
+  {
+    for (const auto &p : vPlanFeatures)
+    {
+      auto *e = Cost_NavState_IMU_Plan::Create(p.pointOri,
                                                p.pa,
                                                p.pb,
                                                p.pc,
                                                p.pd,
                                                Tbl,
-                                               Eigen::Matrix<double, 1, 1>(1/IMUIntegrator::lidar_m));
+                                               Eigen::Matrix<double, 1, 1>(1 / IMUIntegrator::lidar_m));
       edges.push_back(e);
     }
     return;
@@ -344,12 +367,12 @@ void Estimator::processPointToPlan(std::vector<ceres::CostFunction *>& edges,
   std::vector<int> _pointSearchInd2;
   std::vector<float> _pointSearchSqDis2;
 
-  Eigen::Matrix< double, 5, 3 > _matA0;
+  Eigen::Matrix<double, 5, 3> _matA0;
   _matA0.setZero();
-  Eigen::Matrix< double, 5, 1 > _matB0;
+  Eigen::Matrix<double, 5, 1> _matB0;
   _matB0.setOnes();
   _matB0 *= -1;
-  Eigen::Matrix< double, 3, 1 > _matX0;
+  Eigen::Matrix<double, 3, 1> _matX0;
   _matX0.setZero();
   int laserCloudSurfStackNum = laserCloudSurf->points.size();
 
@@ -357,22 +380,28 @@ void Estimator::processPointToPlan(std::vector<ceres::CostFunction *>& edges,
   int debug_num2 = 0;
   int debug_num12 = 0;
   int debug_num22 = 0;
-  for (int i = 0; i < laserCloudSurfStackNum; i++) {
+  for (int i = 0; i < laserCloudSurfStackNum; i++)
+  {
     _pointOri = laserCloudSurf->points[i];
     MAP_MANAGER::pointAssociateToMap(&_pointOri, &_pointSel, m4d);
 
-    int id = map_manager->FindUsedSurfMap(&_pointSel,laserCenWidth_last,laserCenHeight_last,laserCenDepth_last);
+    int id = map_manager->FindUsedSurfMap(&_pointSel, laserCenWidth_last, laserCenHeight_last, laserCenDepth_last);
 
-    if(id == 5000) continue;
+    if (id == 5000)
+      continue;
 
-    if(std::isnan(_pointSel.x) || std::isnan(_pointSel.y) ||std::isnan(_pointSel.z)) continue;
+    if (std::isnan(_pointSel.x) || std::isnan(_pointSel.y) || std::isnan(_pointSel.z))
+      continue;
 
-    if(GlobalSurfMap[id].points.size() > 50) {
+    if (GlobalSurfMap[id].points.size() > 50)
+    {
       SurfKdMap[id].nearestKSearch(_pointSel, 5, _pointSearchInd, _pointSearchSqDis);
 
-      if (_pointSearchSqDis[4] < 1.0) {
-        debug_num1 ++;
-        for (int j = 0; j < 5; j++) {
+      if (_pointSearchSqDis[4] < 1.0)
+      {
+        debug_num1++;
+        for (int j = 0; j < 5; j++)
+        {
           _matA0(j, 0) = GlobalSurfMap[id].points[_pointSearchInd[j]].x;
           _matA0(j, 1) = GlobalSurfMap[id].points[_pointSearchInd[j]].y;
           _matA0(j, 2) = GlobalSurfMap[id].points[_pointSearchInd[j]].z;
@@ -391,106 +420,115 @@ void Estimator::processPointToPlan(std::vector<ceres::CostFunction *>& edges,
         pd /= ps;
 
         bool planeValid = true;
-        for (int j = 0; j < 5; j++) {
+        for (int j = 0; j < 5; j++)
+        {
           if (std::fabs(pa * GlobalSurfMap[id].points[_pointSearchInd[j]].x +
                         pb * GlobalSurfMap[id].points[_pointSearchInd[j]].y +
-                        pc * GlobalSurfMap[id].points[_pointSearchInd[j]].z + pd) > 0.2) {
+                        pc * GlobalSurfMap[id].points[_pointSearchInd[j]].z + pd) > 0.2)
+          {
             planeValid = false;
             break;
           }
         }
 
-        if (planeValid) {
-          debug_num12 ++;
-          auto* e = Cost_NavState_IMU_Plan::Create(Eigen::Vector3d(_pointOri.x,_pointOri.y,_pointOri.z),
-                                                  pa,
-                                                  pb,
-                                                  pc,
-                                                  pd,
-                                                  Tbl,
-                                                  Eigen::Matrix<double, 1, 1>(1/IMUIntegrator::lidar_m));
+        if (planeValid)
+        {
+          debug_num12++;
+          auto *e = Cost_NavState_IMU_Plan::Create(Eigen::Vector3d(_pointOri.x, _pointOri.y, _pointOri.z),
+                                                   pa,
+                                                   pb,
+                                                   pc,
+                                                   pd,
+                                                   Tbl,
+                                                   Eigen::Matrix<double, 1, 1>(1 / IMUIntegrator::lidar_m));
           edges.push_back(e);
-          vPlanFeatures.emplace_back(Eigen::Vector3d(_pointOri.x,_pointOri.y,_pointOri.z),
-                                    pa,
-                                    pb,
-                                    pc,
-                                    pd);
+          vPlanFeatures.emplace_back(Eigen::Vector3d(_pointOri.x, _pointOri.y, _pointOri.z),
+                                     pa,
+                                     pb,
+                                     pc,
+                                     pd);
           vPlanFeatures.back().ComputeError(m4d);
 
           continue;
         }
-        
       }
     }
-    if(laserCloudSurfLocal->points.size() > 20 ){
-    kdtreeLocal->nearestKSearch(_pointSel, 5, _pointSearchInd2, _pointSearchSqDis2);
-    if (_pointSearchSqDis2[4] < 1.0) {
-      debug_num2++;
-      for (int j = 0; j < 5; j++) { 
-        _matA0(j, 0) = laserCloudSurfLocal->points[_pointSearchInd2[j]].x;
-        _matA0(j, 1) = laserCloudSurfLocal->points[_pointSearchInd2[j]].y;
-        _matA0(j, 2) = laserCloudSurfLocal->points[_pointSearchInd2[j]].z;
-      }
-      _matX0 = _matA0.colPivHouseholderQr().solve(_matB0);
+    if (laserCloudSurfLocal->points.size() > 20)
+    {
+      kdtreeLocal->nearestKSearch(_pointSel, 5, _pointSearchInd2, _pointSearchSqDis2);
+      if (_pointSearchSqDis2[4] < 1.0)
+      {
+        debug_num2++;
+        for (int j = 0; j < 5; j++)
+        {
+          _matA0(j, 0) = laserCloudSurfLocal->points[_pointSearchInd2[j]].x;
+          _matA0(j, 1) = laserCloudSurfLocal->points[_pointSearchInd2[j]].y;
+          _matA0(j, 2) = laserCloudSurfLocal->points[_pointSearchInd2[j]].z;
+        }
+        _matX0 = _matA0.colPivHouseholderQr().solve(_matB0);
 
-      float pa = _matX0(0, 0);
-      float pb = _matX0(1, 0);
-      float pc = _matX0(2, 0);
-      float pd = 1;
+        float pa = _matX0(0, 0);
+        float pb = _matX0(1, 0);
+        float pc = _matX0(2, 0);
+        float pd = 1;
 
-      float ps = std::sqrt(pa * pa + pb * pb + pc * pc);
-      pa /= ps;
-      pb /= ps;
-      pc /= ps;
-      pd /= ps;
+        float ps = std::sqrt(pa * pa + pb * pb + pc * pc);
+        pa /= ps;
+        pb /= ps;
+        pc /= ps;
+        pd /= ps;
 
-      bool planeValid = true;
-      for (int j = 0; j < 5; j++) {
-        if (std::fabs(pa * laserCloudSurfLocal->points[_pointSearchInd2[j]].x +
-                      pb * laserCloudSurfLocal->points[_pointSearchInd2[j]].y +
-                      pc * laserCloudSurfLocal->points[_pointSearchInd2[j]].z + pd) > 0.2) {
-          planeValid = false;
-          break;
+        bool planeValid = true;
+        for (int j = 0; j < 5; j++)
+        {
+          if (std::fabs(pa * laserCloudSurfLocal->points[_pointSearchInd2[j]].x +
+                        pb * laserCloudSurfLocal->points[_pointSearchInd2[j]].y +
+                        pc * laserCloudSurfLocal->points[_pointSearchInd2[j]].z + pd) > 0.2)
+          {
+            planeValid = false;
+            break;
+          }
+        }
+
+        if (planeValid)
+        {
+          debug_num22++;
+          auto *e = Cost_NavState_IMU_Plan::Create(Eigen::Vector3d(_pointOri.x, _pointOri.y, _pointOri.z),
+                                                   pa,
+                                                   pb,
+                                                   pc,
+                                                   pd,
+                                                   Tbl,
+                                                   Eigen::Matrix<double, 1, 1>(1 / IMUIntegrator::lidar_m));
+          edges.push_back(e);
+          vPlanFeatures.emplace_back(Eigen::Vector3d(_pointOri.x, _pointOri.y, _pointOri.z),
+                                     pa,
+                                     pb,
+                                     pc,
+                                     pd);
+          vPlanFeatures.back().ComputeError(m4d);
         }
       }
-
-      if (planeValid) {
-        debug_num22 ++;
-        auto* e = Cost_NavState_IMU_Plan::Create(Eigen::Vector3d(_pointOri.x,_pointOri.y,_pointOri.z),
-                                                pa,
-                                                pb,
-                                                pc,
-                                                pd,
-                                                Tbl,
-                                                Eigen::Matrix<double, 1, 1>(1/IMUIntegrator::lidar_m));
-        edges.push_back(e);
-        vPlanFeatures.emplace_back(Eigen::Vector3d(_pointOri.x,_pointOri.y,_pointOri.z),
-                                  pa,
-                                  pb,
-                                  pc,
-                                  pd);
-        vPlanFeatures.back().ComputeError(m4d);
-      }
     }
   }
-
-  }
-
 }
 
-void Estimator::processPointToPlanVec(std::vector<ceres::CostFunction *>& edges,
-                                   std::vector<FeaturePlanVec>& vPlanFeatures,
-                                   const pcl::PointCloud<PointType>::Ptr& laserCloudSurf,
-                                   const pcl::PointCloud<PointType>::Ptr& laserCloudSurfLocal,
-                                   const pcl::KdTreeFLANN<PointType>::Ptr& kdtreeLocal,
-                                   const Eigen::Matrix4d& exTlb,
-                                   const Eigen::Matrix4d& m4d){
+void Estimator::processPointToPlanVec(std::vector<ceres::CostFunction *> &edges,
+                                      std::vector<FeaturePlanVec> &vPlanFeatures,
+                                      const pcl::PointCloud<PointType>::Ptr &laserCloudSurf,
+                                      const pcl::PointCloud<PointType>::Ptr &laserCloudSurfLocal,
+                                      const pcl::KdTreeFLANN<PointType>::Ptr &kdtreeLocal,
+                                      const Eigen::Matrix4d &exTlb,
+                                      const Eigen::Matrix4d &m4d)
+{
   Eigen::Matrix4d Tbl = Eigen::Matrix4d::Identity();
-  Tbl.topLeftCorner(3,3) = exTlb.topLeftCorner(3,3).transpose();
-  Tbl.topRightCorner(3,1) = -1.0 * Tbl.topLeftCorner(3,3) * exTlb.topRightCorner(3,1);
-  if(!vPlanFeatures.empty()){
-    for(const auto& p : vPlanFeatures){
-      auto* e = Cost_NavState_IMU_Plan_Vec::Create(p.pointOri,
+  Tbl.topLeftCorner(3, 3) = exTlb.topLeftCorner(3, 3).transpose();
+  Tbl.topRightCorner(3, 1) = -1.0 * Tbl.topLeftCorner(3, 3) * exTlb.topRightCorner(3, 1);
+  if (!vPlanFeatures.empty())
+  {
+    for (const auto &p : vPlanFeatures)
+    {
+      auto *e = Cost_NavState_IMU_Plan_Vec::Create(p.pointOri,
                                                    p.pointProj,
                                                    Tbl,
                                                    p.sqrt_info);
@@ -504,12 +542,12 @@ void Estimator::processPointToPlanVec(std::vector<ceres::CostFunction *>& edges,
   std::vector<int> _pointSearchInd2;
   std::vector<float> _pointSearchSqDis2;
 
-  Eigen::Matrix< double, 5, 3 > _matA0;
+  Eigen::Matrix<double, 5, 3> _matA0;
   _matA0.setZero();
-  Eigen::Matrix< double, 5, 1 > _matB0;
+  Eigen::Matrix<double, 5, 1> _matB0;
   _matB0.setOnes();
   _matB0 *= -1;
-  Eigen::Matrix< double, 3, 1 > _matX0;
+  Eigen::Matrix<double, 3, 1> _matX0;
   _matX0.setZero();
   int laserCloudSurfStackNum = laserCloudSurf->points.size();
 
@@ -517,22 +555,28 @@ void Estimator::processPointToPlanVec(std::vector<ceres::CostFunction *>& edges,
   int debug_num2 = 0;
   int debug_num12 = 0;
   int debug_num22 = 0;
-  for (int i = 0; i < laserCloudSurfStackNum; i++) {
+  for (int i = 0; i < laserCloudSurfStackNum; i++)
+  {
     _pointOri = laserCloudSurf->points[i];
     MAP_MANAGER::pointAssociateToMap(&_pointOri, &_pointSel, m4d);
 
-    int id = map_manager->FindUsedSurfMap(&_pointSel,laserCenWidth_last,laserCenHeight_last,laserCenDepth_last);
+    int id = map_manager->FindUsedSurfMap(&_pointSel, laserCenWidth_last, laserCenHeight_last, laserCenDepth_last);
 
-    if(id == 5000) continue;
+    if (id == 5000)
+      continue;
 
-    if(std::isnan(_pointSel.x) || std::isnan(_pointSel.y) ||std::isnan(_pointSel.z)) continue;
+    if (std::isnan(_pointSel.x) || std::isnan(_pointSel.y) || std::isnan(_pointSel.z))
+      continue;
 
-    if(GlobalSurfMap[id].points.size() > 50) {
+    if (GlobalSurfMap[id].points.size() > 50)
+    {
       SurfKdMap[id].nearestKSearch(_pointSel, 5, _pointSearchInd, _pointSearchSqDis);
 
-      if (_pointSearchSqDis[4] < thres_dist) {
-        debug_num1 ++;
-        for (int j = 0; j < 5; j++) {
+      if (_pointSearchSqDis[4] < thres_dist)
+      {
+        debug_num1++;
+        for (int j = 0; j < 5; j++)
+        {
           _matA0(j, 0) = GlobalSurfMap[id].points[_pointSearchInd[j]].x;
           _matA0(j, 1) = GlobalSurfMap[id].points[_pointSearchInd[j]].y;
           _matA0(j, 2) = GlobalSurfMap[id].points[_pointSearchInd[j]].z;
@@ -551,133 +595,140 @@ void Estimator::processPointToPlanVec(std::vector<ceres::CostFunction *>& edges,
         pd /= ps;
 
         bool planeValid = true;
-        for (int j = 0; j < 5; j++) {
+        for (int j = 0; j < 5; j++)
+        {
           if (std::fabs(pa * GlobalSurfMap[id].points[_pointSearchInd[j]].x +
                         pb * GlobalSurfMap[id].points[_pointSearchInd[j]].y +
-                        pc * GlobalSurfMap[id].points[_pointSearchInd[j]].z + pd) > 0.2) {
+                        pc * GlobalSurfMap[id].points[_pointSearchInd[j]].z + pd) > 0.2)
+          {
             planeValid = false;
             break;
           }
         }
 
-        if (planeValid) {
-          debug_num12 ++;
+        if (planeValid)
+        {
+          debug_num12++;
           double dist = pa * _pointSel.x +
                         pb * _pointSel.y +
                         pc * _pointSel.z + pd;
           Eigen::Vector3d omega(pa, pb, pc);
-          Eigen::Vector3d point_proj = Eigen::Vector3d(_pointSel.x,_pointSel.y,_pointSel.z) - (dist * omega);
+          Eigen::Vector3d point_proj = Eigen::Vector3d(_pointSel.x, _pointSel.y, _pointSel.z) - (dist * omega);
           Eigen::Vector3d e1(1, 0, 0);
           Eigen::Matrix3d J = e1 * omega.transpose();
           Eigen::JacobiSVD<Eigen::Matrix3d> svd(J, Eigen::ComputeThinU | Eigen::ComputeThinV);
           Eigen::Matrix3d R_svd = svd.matrixV() * svd.matrixU().transpose();
-          Eigen::Matrix3d info = (1.0/IMUIntegrator::lidar_m) * Eigen::Matrix3d::Identity();
+          Eigen::Matrix3d info = (1.0 / IMUIntegrator::lidar_m) * Eigen::Matrix3d::Identity();
           info(1, 1) *= plan_weight_tan;
           info(2, 2) *= plan_weight_tan;
           Eigen::Matrix3d sqrt_info = info * R_svd.transpose();
 
-          auto* e = Cost_NavState_IMU_Plan_Vec::Create(Eigen::Vector3d(_pointOri.x,_pointOri.y,_pointOri.z),
+          auto *e = Cost_NavState_IMU_Plan_Vec::Create(Eigen::Vector3d(_pointOri.x, _pointOri.y, _pointOri.z),
                                                        point_proj,
                                                        Tbl,
                                                        sqrt_info);
           edges.push_back(e);
-          vPlanFeatures.emplace_back(Eigen::Vector3d(_pointOri.x,_pointOri.y,_pointOri.z),
+          vPlanFeatures.emplace_back(Eigen::Vector3d(_pointOri.x, _pointOri.y, _pointOri.z),
                                      point_proj,
                                      sqrt_info);
           vPlanFeatures.back().ComputeError(m4d);
 
           continue;
         }
-        
       }
     }
 
+    if (laserCloudSurfLocal->points.size() > 20)
+    {
+      kdtreeLocal->nearestKSearch(_pointSel, 5, _pointSearchInd2, _pointSearchSqDis2);
+      if (_pointSearchSqDis2[4] < thres_dist)
+      {
+        debug_num2++;
+        for (int j = 0; j < 5; j++)
+        {
+          _matA0(j, 0) = laserCloudSurfLocal->points[_pointSearchInd2[j]].x;
+          _matA0(j, 1) = laserCloudSurfLocal->points[_pointSearchInd2[j]].y;
+          _matA0(j, 2) = laserCloudSurfLocal->points[_pointSearchInd2[j]].z;
+        }
+        _matX0 = _matA0.colPivHouseholderQr().solve(_matB0);
 
-    if(laserCloudSurfLocal->points.size() > 20 ){
-    kdtreeLocal->nearestKSearch(_pointSel, 5, _pointSearchInd2, _pointSearchSqDis2);
-    if (_pointSearchSqDis2[4] < thres_dist) {
-      debug_num2++;
-      for (int j = 0; j < 5; j++) { 
-        _matA0(j, 0) = laserCloudSurfLocal->points[_pointSearchInd2[j]].x;
-        _matA0(j, 1) = laserCloudSurfLocal->points[_pointSearchInd2[j]].y;
-        _matA0(j, 2) = laserCloudSurfLocal->points[_pointSearchInd2[j]].z;
-      }
-      _matX0 = _matA0.colPivHouseholderQr().solve(_matB0);
+        float pa = _matX0(0, 0);
+        float pb = _matX0(1, 0);
+        float pc = _matX0(2, 0);
+        float pd = 1;
 
-      float pa = _matX0(0, 0);
-      float pb = _matX0(1, 0);
-      float pc = _matX0(2, 0);
-      float pd = 1;
+        float ps = std::sqrt(pa * pa + pb * pb + pc * pc);
+        pa /= ps;
+        pb /= ps;
+        pc /= ps;
+        pd /= ps;
 
-      float ps = std::sqrt(pa * pa + pb * pb + pc * pc);
-      pa /= ps;
-      pb /= ps;
-      pc /= ps;
-      pd /= ps;
+        bool planeValid = true;
+        for (int j = 0; j < 5; j++)
+        {
+          if (std::fabs(pa * laserCloudSurfLocal->points[_pointSearchInd2[j]].x +
+                        pb * laserCloudSurfLocal->points[_pointSearchInd2[j]].y +
+                        pc * laserCloudSurfLocal->points[_pointSearchInd2[j]].z + pd) > 0.2)
+          {
+            planeValid = false;
+            break;
+          }
+        }
 
-      bool planeValid = true;
-      for (int j = 0; j < 5; j++) {
-        if (std::fabs(pa * laserCloudSurfLocal->points[_pointSearchInd2[j]].x +
-                      pb * laserCloudSurfLocal->points[_pointSearchInd2[j]].y +
-                      pc * laserCloudSurfLocal->points[_pointSearchInd2[j]].z + pd) > 0.2) {
-          planeValid = false;
-          break;
+        if (planeValid)
+        {
+          debug_num22++;
+          double dist = pa * _pointSel.x +
+                        pb * _pointSel.y +
+                        pc * _pointSel.z + pd;
+          Eigen::Vector3d omega(pa, pb, pc);
+          Eigen::Vector3d point_proj = Eigen::Vector3d(_pointSel.x, _pointSel.y, _pointSel.z) - (dist * omega);
+          Eigen::Vector3d e1(1, 0, 0);
+          Eigen::Matrix3d J = e1 * omega.transpose();
+          Eigen::JacobiSVD<Eigen::Matrix3d> svd(J, Eigen::ComputeThinU | Eigen::ComputeThinV);
+          Eigen::Matrix3d R_svd = svd.matrixV() * svd.matrixU().transpose();
+          Eigen::Matrix3d info = (1.0 / IMUIntegrator::lidar_m) * Eigen::Matrix3d::Identity();
+          info(1, 1) *= plan_weight_tan;
+          info(2, 2) *= plan_weight_tan;
+          Eigen::Matrix3d sqrt_info = info * R_svd.transpose();
+
+          auto *e = Cost_NavState_IMU_Plan_Vec::Create(Eigen::Vector3d(_pointOri.x, _pointOri.y, _pointOri.z),
+                                                       point_proj,
+                                                       Tbl,
+                                                       sqrt_info);
+          edges.push_back(e);
+          vPlanFeatures.emplace_back(Eigen::Vector3d(_pointOri.x, _pointOri.y, _pointOri.z),
+                                     point_proj,
+                                     sqrt_info);
+          vPlanFeatures.back().ComputeError(m4d);
         }
       }
-
-      if (planeValid) {
-        debug_num22 ++;
-        double dist = pa * _pointSel.x +
-                      pb * _pointSel.y +
-                      pc * _pointSel.z + pd;
-        Eigen::Vector3d omega(pa, pb, pc);
-        Eigen::Vector3d point_proj = Eigen::Vector3d(_pointSel.x,_pointSel.y,_pointSel.z) - (dist * omega);
-        Eigen::Vector3d e1(1, 0, 0);
-        Eigen::Matrix3d J = e1 * omega.transpose();
-        Eigen::JacobiSVD<Eigen::Matrix3d> svd(J, Eigen::ComputeThinU | Eigen::ComputeThinV);
-        Eigen::Matrix3d R_svd = svd.matrixV() * svd.matrixU().transpose();
-        Eigen::Matrix3d info = (1.0/IMUIntegrator::lidar_m) * Eigen::Matrix3d::Identity();
-        info(1, 1) *= plan_weight_tan;
-        info(2, 2) *= plan_weight_tan;
-        Eigen::Matrix3d sqrt_info = info * R_svd.transpose();
-
-        auto* e = Cost_NavState_IMU_Plan_Vec::Create(Eigen::Vector3d(_pointOri.x,_pointOri.y,_pointOri.z),
-                                                      point_proj,
-                                                      Tbl,
-                                                      sqrt_info);
-        edges.push_back(e);
-        vPlanFeatures.emplace_back(Eigen::Vector3d(_pointOri.x,_pointOri.y,_pointOri.z),
-                                    point_proj,
-                                    sqrt_info);
-        vPlanFeatures.back().ComputeError(m4d);
-      }
     }
   }
-
-  }
-
 }
 
-
-void Estimator::processNonFeatureICP(std::vector<ceres::CostFunction *>& edges,
-                                     std::vector<FeatureNon>& vNonFeatures,
-                                     const pcl::PointCloud<PointType>::Ptr& laserCloudNonFeature,
-                                     const pcl::PointCloud<PointType>::Ptr& laserCloudNonFeatureLocal,
-                                     const pcl::KdTreeFLANN<PointType>::Ptr& kdtreeLocal,
-                                     const Eigen::Matrix4d& exTlb,
-                                     const Eigen::Matrix4d& m4d){
+void Estimator::processNonFeatureICP(std::vector<ceres::CostFunction *> &edges,
+                                     std::vector<FeatureNon> &vNonFeatures,
+                                     const pcl::PointCloud<PointType>::Ptr &laserCloudNonFeature,
+                                     const pcl::PointCloud<PointType>::Ptr &laserCloudNonFeatureLocal,
+                                     const pcl::KdTreeFLANN<PointType>::Ptr &kdtreeLocal,
+                                     const Eigen::Matrix4d &exTlb,
+                                     const Eigen::Matrix4d &m4d)
+{
   Eigen::Matrix4d Tbl = Eigen::Matrix4d::Identity();
-  Tbl.topLeftCorner(3,3) = exTlb.topLeftCorner(3,3).transpose();
-  Tbl.topRightCorner(3,1) = -1.0 * Tbl.topLeftCorner(3,3) * exTlb.topRightCorner(3,1);
-  if(!vNonFeatures.empty()){
-    for(const auto& p : vNonFeatures){
-      auto* e = Cost_NonFeature_ICP::Create(p.pointOri,
+  Tbl.topLeftCorner(3, 3) = exTlb.topLeftCorner(3, 3).transpose();
+  Tbl.topRightCorner(3, 1) = -1.0 * Tbl.topLeftCorner(3, 3) * exTlb.topRightCorner(3, 1);
+  if (!vNonFeatures.empty())
+  {
+    for (const auto &p : vNonFeatures)
+    {
+      auto *e = Cost_NonFeature_ICP::Create(p.pointOri,
                                             p.pa,
                                             p.pb,
                                             p.pc,
                                             p.pd,
                                             Tbl,
-                                            Eigen::Matrix<double, 1, 1>(1/IMUIntegrator::lidar_m));
+                                            Eigen::Matrix<double, 1, 1>(1 / IMUIntegrator::lidar_m));
       edges.push_back(e);
     }
     return;
@@ -689,28 +740,34 @@ void Estimator::processNonFeatureICP(std::vector<ceres::CostFunction *>& edges,
   std::vector<int> _pointSearchInd2;
   std::vector<float> _pointSearchSqDis2;
 
-  Eigen::Matrix< double, 5, 3 > _matA0;
+  Eigen::Matrix<double, 5, 3> _matA0;
   _matA0.setZero();
-  Eigen::Matrix< double, 5, 1 > _matB0;
+  Eigen::Matrix<double, 5, 1> _matB0;
   _matB0.setOnes();
   _matB0 *= -1;
-  Eigen::Matrix< double, 3, 1 > _matX0;
+  Eigen::Matrix<double, 3, 1> _matX0;
   _matX0.setZero();
 
   int laserCloudNonFeatureStackNum = laserCloudNonFeature->points.size();
-  for (int i = 0; i < laserCloudNonFeatureStackNum; i++) {
+  for (int i = 0; i < laserCloudNonFeatureStackNum; i++)
+  {
     _pointOri = laserCloudNonFeature->points[i];
     MAP_MANAGER::pointAssociateToMap(&_pointOri, &_pointSel, m4d);
-    int id = map_manager->FindUsedNonFeatureMap(&_pointSel,laserCenWidth_last,laserCenHeight_last,laserCenDepth_last);
+    int id = map_manager->FindUsedNonFeatureMap(&_pointSel, laserCenWidth_last, laserCenHeight_last, laserCenDepth_last);
 
-    if(id == 5000) continue;
+    if (id == 5000)
+      continue;
 
-    if(std::isnan(_pointSel.x) || std::isnan(_pointSel.y) ||std::isnan(_pointSel.z)) continue;
+    if (std::isnan(_pointSel.x) || std::isnan(_pointSel.y) || std::isnan(_pointSel.z))
+      continue;
 
-    if(GlobalNonFeatureMap[id].points.size() > 100) {
+    if (GlobalNonFeatureMap[id].points.size() > 100)
+    {
       NonFeatureKdMap[id].nearestKSearch(_pointSel, 5, _pointSearchInd, _pointSearchSqDis);
-      if (_pointSearchSqDis[4] < 1 * thres_dist) {
-        for (int j = 0; j < 5; j++) {
+      if (_pointSearchSqDis[4] < 1 * thres_dist)
+      {
+        for (int j = 0; j < 5; j++)
+        {
           _matA0(j, 0) = GlobalNonFeatureMap[id].points[_pointSearchInd[j]].x;
           _matA0(j, 1) = GlobalNonFeatureMap[id].points[_pointSearchInd[j]].y;
           _matA0(j, 2) = GlobalNonFeatureMap[id].points[_pointSearchInd[j]].z;
@@ -729,26 +786,29 @@ void Estimator::processNonFeatureICP(std::vector<ceres::CostFunction *>& edges,
         pd /= ps;
 
         bool planeValid = true;
-        for (int j = 0; j < 5; j++) {
+        for (int j = 0; j < 5; j++)
+        {
           if (std::fabs(pa * GlobalNonFeatureMap[id].points[_pointSearchInd[j]].x +
                         pb * GlobalNonFeatureMap[id].points[_pointSearchInd[j]].y +
-                        pc * GlobalNonFeatureMap[id].points[_pointSearchInd[j]].z + pd) > 0.2) {
+                        pc * GlobalNonFeatureMap[id].points[_pointSearchInd[j]].z + pd) > 0.2)
+          {
             planeValid = false;
             break;
           }
         }
 
-        if(planeValid) {
+        if (planeValid)
+        {
 
-          auto* e = Cost_NonFeature_ICP::Create(Eigen::Vector3d(_pointOri.x,_pointOri.y,_pointOri.z),
+          auto *e = Cost_NonFeature_ICP::Create(Eigen::Vector3d(_pointOri.x, _pointOri.y, _pointOri.z),
                                                 pa,
                                                 pb,
                                                 pc,
                                                 pd,
                                                 Tbl,
-                                                Eigen::Matrix<double, 1, 1>(1/IMUIntegrator::lidar_m));
+                                                Eigen::Matrix<double, 1, 1>(1 / IMUIntegrator::lidar_m));
           edges.push_back(e);
-          vNonFeatures.emplace_back(Eigen::Vector3d(_pointOri.x,_pointOri.y,_pointOri.z),
+          vNonFeatures.emplace_back(Eigen::Vector3d(_pointOri.x, _pointOri.y, _pointOri.z),
                                     pa,
                                     pb,
                                     pc,
@@ -758,13 +818,15 @@ void Estimator::processNonFeatureICP(std::vector<ceres::CostFunction *>& edges,
           continue;
         }
       }
-    
     }
 
-    if(laserCloudNonFeatureLocal->points.size() > 20 ){
+    if (laserCloudNonFeatureLocal->points.size() > 20)
+    {
       kdtreeLocal->nearestKSearch(_pointSel, 5, _pointSearchInd2, _pointSearchSqDis2);
-      if (_pointSearchSqDis2[4] < 1 * thres_dist) {
-        for (int j = 0; j < 5; j++) { 
+      if (_pointSearchSqDis2[4] < 1 * thres_dist)
+      {
+        for (int j = 0; j < 5; j++)
+        {
           _matA0(j, 0) = laserCloudNonFeatureLocal->points[_pointSearchInd2[j]].x;
           _matA0(j, 1) = laserCloudNonFeatureLocal->points[_pointSearchInd2[j]].y;
           _matA0(j, 2) = laserCloudNonFeatureLocal->points[_pointSearchInd2[j]].z;
@@ -783,26 +845,29 @@ void Estimator::processNonFeatureICP(std::vector<ceres::CostFunction *>& edges,
         pd /= ps;
 
         bool planeValid = true;
-        for (int j = 0; j < 5; j++) {
+        for (int j = 0; j < 5; j++)
+        {
           if (std::fabs(pa * laserCloudNonFeatureLocal->points[_pointSearchInd2[j]].x +
                         pb * laserCloudNonFeatureLocal->points[_pointSearchInd2[j]].y +
-                        pc * laserCloudNonFeatureLocal->points[_pointSearchInd2[j]].z + pd) > 0.2) {
+                        pc * laserCloudNonFeatureLocal->points[_pointSearchInd2[j]].z + pd) > 0.2)
+          {
             planeValid = false;
             break;
           }
         }
 
-        if(planeValid) {
+        if (planeValid)
+        {
 
-          auto* e = Cost_NonFeature_ICP::Create(Eigen::Vector3d(_pointOri.x,_pointOri.y,_pointOri.z),
+          auto *e = Cost_NonFeature_ICP::Create(Eigen::Vector3d(_pointOri.x, _pointOri.y, _pointOri.z),
                                                 pa,
                                                 pb,
                                                 pc,
                                                 pd,
                                                 Tbl,
-                                                Eigen::Matrix<double, 1, 1>(1/IMUIntegrator::lidar_m));
+                                                Eigen::Matrix<double, 1, 1>(1 / IMUIntegrator::lidar_m));
           edges.push_back(e);
-          vNonFeatures.emplace_back(Eigen::Vector3d(_pointOri.x,_pointOri.y,_pointOri.z),
+          vNonFeatures.emplace_back(Eigen::Vector3d(_pointOri.x, _pointOri.y, _pointOri.z),
                                     pa,
                                     pb,
                                     pc,
@@ -812,13 +877,13 @@ void Estimator::processNonFeatureICP(std::vector<ceres::CostFunction *>& edges,
       }
     }
   }
-
 }
 
-
-void Estimator::vector2double(const std::list<LidarFrame>& lidarFrameList){
+void Estimator::vector2double(const std::list<LidarFrame> &lidarFrameList)
+{
   int i = 0;
-  for(const auto& l : lidarFrameList){
+  for (const auto &l : lidarFrameList)
+  {
     Eigen::Map<Eigen::Matrix<double, 6, 1>> PR(para_PR[i]);
     PR.segment<3>(0) = l.P;
     PR.segment<3>(3) = Sophus::SO3d(l.Q).log();
@@ -831,9 +896,11 @@ void Estimator::vector2double(const std::list<LidarFrame>& lidarFrameList){
   }
 }
 
-void Estimator::double2vector(std::list<LidarFrame>& lidarFrameList){
+void Estimator::double2vector(std::list<LidarFrame> &lidarFrameList)
+{
   int i = 0;
-  for(auto& l : lidarFrameList){
+  for (auto &l : lidarFrameList)
+  {
     Eigen::Map<const Eigen::Matrix<double, 6, 1>> PR(para_PR[i]);
     Eigen::Map<const Eigen::Matrix<double, 9, 1>> VBias(para_VBias[i]);
     l.P = PR.segment<3>(0);
@@ -845,37 +912,42 @@ void Estimator::double2vector(std::list<LidarFrame>& lidarFrameList){
   }
 }
 
-void Estimator::EstimateLidarPose(std::list<LidarFrame>& lidarFrameList,
-                           const Eigen::Matrix4d& exTlb,
-                           const Eigen::Vector3d& gravity,
-                           nav_msgs::Odometry& debugInfo){
-  
-  Eigen::Matrix3d exRbl = exTlb.topLeftCorner(3,3).transpose();
-  Eigen::Vector3d exPbl = -1.0 * exRbl * exTlb.topRightCorner(3,1);
+void Estimator::EstimateLidarPose(std::list<LidarFrame> &lidarFrameList,
+                                  const Eigen::Matrix4d &exTlb,
+                                  const Eigen::Vector3d &gravity,
+                                  nav_msgs::Odometry &debugInfo)
+{
+
+  Eigen::Matrix3d exRbl = exTlb.topLeftCorner(3, 3).transpose();
+  Eigen::Vector3d exPbl = -1.0 * exRbl * exTlb.topRightCorner(3, 1);
   Eigen::Matrix4d transformTobeMapped = Eigen::Matrix4d::Identity();
-  transformTobeMapped.topLeftCorner(3,3) = lidarFrameList.back().Q * exRbl;
-  transformTobeMapped.topRightCorner(3,1) = lidarFrameList.back().Q * exPbl + lidarFrameList.back().P;
+  transformTobeMapped.topLeftCorner(3, 3) = lidarFrameList.back().Q * exRbl;
+  transformTobeMapped.topRightCorner(3, 1) = lidarFrameList.back().Q * exPbl + lidarFrameList.back().P;
 
   int laserCloudCornerFromMapNum = map_manager->get_corner_map()->points.size();
   int laserCloudSurfFromMapNum = map_manager->get_surf_map()->points.size();
   int laserCloudCornerFromLocalNum = laserCloudCornerFromLocal->points.size();
   int laserCloudSurfFromLocalNum = laserCloudSurfFromLocal->points.size();
   int stack_count = 0;
-  for(const auto& l : lidarFrameList){
+  for (const auto &l : lidarFrameList)
+  {
     laserCloudCornerLast[stack_count]->clear();
-    for(const auto& p : l.laserCloud->points){
-      if(std::fabs(p.normal_z - 1.0) < 1e-5)
+    for (const auto &p : l.laserCloud->points)
+    {
+      if (std::fabs(p.normal_z - 1.0) < 1e-5)
         laserCloudCornerLast[stack_count]->push_back(p);
     }
     laserCloudSurfLast[stack_count]->clear();
-    for(const auto& p : l.laserCloud->points){
-      if(std::fabs(p.normal_z - 2.0) < 1e-5)
+    for (const auto &p : l.laserCloud->points)
+    {
+      if (std::fabs(p.normal_z - 2.0) < 1e-5)
         laserCloudSurfLast[stack_count]->push_back(p);
     }
 
     laserCloudNonFeatureLast[stack_count]->clear();
-    for(const auto& p : l.laserCloud->points){
-      if(std::fabs(p.normal_z - 3.0) < 1e-5)
+    for (const auto &p : l.laserCloud->points)
+    {
+      if (std::fabs(p.normal_z - 3.0) < 1e-5)
         laserCloudNonFeatureLast[stack_count]->push_back(p);
     }
 
@@ -892,14 +964,15 @@ void Estimator::EstimateLidarPose(std::list<LidarFrame>& lidarFrameList,
     downSizeFilterNonFeature.filter(*laserCloudNonFeatureStack[stack_count]);
     stack_count++;
   }
-  if ( ((laserCloudCornerFromMapNum > 0 && laserCloudSurfFromMapNum > 100) || 
-       (laserCloudCornerFromLocalNum > 0 && laserCloudSurfFromLocalNum > 100))) {
+  if (((laserCloudCornerFromMapNum > 0 && laserCloudSurfFromMapNum > 100) ||
+       (laserCloudCornerFromLocalNum > 0 && laserCloudSurfFromLocalNum > 100)))
+  {
     Estimate(lidarFrameList, exTlb, gravity);
   }
 
   transformTobeMapped = Eigen::Matrix4d::Identity();
-  transformTobeMapped.topLeftCorner(3,3) = lidarFrameList.front().Q * exRbl;
-  transformTobeMapped.topRightCorner(3,1) = lidarFrameList.front().Q * exPbl + lidarFrameList.front().P;
+  transformTobeMapped.topLeftCorner(3, 3) = lidarFrameList.front().Q * exRbl;
+  transformTobeMapped.topRightCorner(3, 1) = lidarFrameList.front().Q * exPbl + lidarFrameList.front().P;
 
   std::unique_lock<std::mutex> locker(mtx_Map);
   *laserCloudCornerForMap = *laserCloudCornerStack[0];
@@ -909,13 +982,14 @@ void Estimator::EstimateLidarPose(std::list<LidarFrame>& lidarFrameList,
   laserCloudCornerFromLocal->clear();
   laserCloudSurfFromLocal->clear();
   laserCloudNonFeatureFromLocal->clear();
-  MapIncrementLocal(laserCloudCornerForMap,laserCloudSurfForMap,laserCloudNonFeatureForMap,transformTobeMapped);
+  MapIncrementLocal(laserCloudCornerForMap, laserCloudSurfForMap, laserCloudNonFeatureForMap, transformTobeMapped);
   locker.unlock();
 }
 
-void Estimator::Estimate(std::list<LidarFrame>& lidarFrameList,
-                         const Eigen::Matrix4d& exTlb,
-                         const Eigen::Vector3d& gravity){
+void Estimator::Estimate(std::list<LidarFrame> &lidarFrameList,
+                         const Eigen::Matrix4d &exTlb,
+                         const Eigen::Vector3d &gravity)
+{
 
   int num_corner_map = 0;
   int num_surf_map = 0;
@@ -923,14 +997,15 @@ void Estimator::Estimate(std::list<LidarFrame>& lidarFrameList,
   static uint32_t frame_count = 0;
   int windowSize = lidarFrameList.size();
   Eigen::Matrix4d transformTobeMapped = Eigen::Matrix4d::Identity();
-  Eigen::Matrix3d exRbl = exTlb.topLeftCorner(3,3).transpose();
-  Eigen::Vector3d exPbl = -1.0 * exRbl * exTlb.topRightCorner(3,1);
+  Eigen::Matrix3d exRbl = exTlb.topLeftCorner(3, 3).transpose();
+  Eigen::Vector3d exPbl = -1.0 * exRbl * exTlb.topRightCorner(3, 1);
   kdtreeCornerFromLocal->setInputCloud(laserCloudCornerFromLocal);
   kdtreeSurfFromLocal->setInputCloud(laserCloudSurfFromLocal);
   kdtreeNonFeatureFromLocal->setInputCloud(laserCloudNonFeatureFromLocal);
 
   std::unique_lock<std::mutex> locker3(map_manager->mtx_MapManager);
-  for(int i = 0; i < 4851; i++){
+  for (int i = 0; i < 4851; i++)
+  {
     CornerKdMap[i] = map_manager->getCornerKdMap(i);
     SurfKdMap[i] = map_manager->getSurfKdMap(i);
     NonFeatureKdMap[i] = map_manager->getNonFeatureKdMap(i);
@@ -947,71 +1022,84 @@ void Estimator::Estimate(std::list<LidarFrame>& lidarFrameList,
 
   // store point to line features
   std::vector<std::vector<FeatureLine>> vLineFeatures(windowSize);
-  for(auto& v : vLineFeatures){
+  for (auto &v : vLineFeatures)
+  {
     v.reserve(2000);
   }
 
   // store point to plan features
   std::vector<std::vector<FeaturePlanVec>> vPlanFeatures(windowSize);
-  for(auto& v : vPlanFeatures){
+  for (auto &v : vPlanFeatures)
+  {
     v.reserve(2000);
   }
 
   std::vector<std::vector<FeatureNon>> vNonFeatures(windowSize);
-  for(auto& v : vNonFeatures){
+  for (auto &v : vNonFeatures)
+  {
     v.reserve(2000);
   }
 
-  if(windowSize == SLIDEWINDOWSIZE) {
+  if (windowSize == SLIDEWINDOWSIZE)
+  {
     plan_weight_tan = 0.0003;
     thres_dist = 1.0;
-  } else {
+  }
+  else
+  {
     plan_weight_tan = 0.0;
     thres_dist = 25.0;
   }
 
   // excute optimize process
   const int max_iters = 5;
-  for(int iterOpt=0; iterOpt<max_iters; ++iterOpt){
+  for (int iterOpt = 0; iterOpt < max_iters; ++iterOpt)
+  {
 
     vector2double(lidarFrameList);
 
-    //create huber loss function
-    ceres::LossFunction* loss_function = NULL;
+    // create huber loss function
+    ceres::LossFunction *loss_function = NULL;
     loss_function = new ceres::HuberLoss(0.1 / IMUIntegrator::lidar_m);
-    if(windowSize == SLIDEWINDOWSIZE) {
+    if (windowSize == SLIDEWINDOWSIZE)
+    {
       loss_function = NULL;
-    } else {
+    }
+    else
+    {
       loss_function = new ceres::HuberLoss(0.1 / IMUIntegrator::lidar_m);
     }
 
     ceres::Problem::Options problem_options;
     ceres::Problem problem(problem_options);
 
-    for(int i=0; i<windowSize; ++i) {
+    for (int i = 0; i < windowSize; ++i)
+    {
       problem.AddParameterBlock(para_PR[i], 6);
     }
 
-    for(int i=0; i<windowSize; ++i)
+    for (int i = 0; i < windowSize; ++i)
       problem.AddParameterBlock(para_VBias[i], 9);
 
     // add IMU CostFunction
-    for(int f=1; f<windowSize; ++f){
+    for (int f = 1; f < windowSize; ++f)
+    {
       auto frame_curr = lidarFrameList.begin();
       std::advance(frame_curr, f);
       problem.AddResidualBlock(Cost_NavState_PRV_Bias::Create(frame_curr->imuIntegrator,
-                                                              const_cast<Eigen::Vector3d&>(gravity),
-                                                              Eigen::LLT<Eigen::Matrix<double, 15, 15>>
-                                                                      (frame_curr->imuIntegrator.GetCovariance().inverse())
-                                                                      .matrixL().transpose()),
+                                                              const_cast<Eigen::Vector3d &>(gravity),
+                                                              Eigen::LLT<Eigen::Matrix<double, 15, 15>>(frame_curr->imuIntegrator.GetCovariance().inverse())
+                                                                  .matrixL()
+                                                                  .transpose()),
                                nullptr,
-                               para_PR[f-1],
-                               para_VBias[f-1],
+                               para_PR[f - 1],
+                               para_VBias[f - 1],
                                para_PR[f],
                                para_VBias[f]);
     }
 
-    if (last_marginalization_info){
+    if (last_marginalization_info)
+    {
       // construct new marginlization_factor
       auto *marginalization_factor = new MarginalizationFactor(last_marginalization_info);
       problem.AddResidualBlock(marginalization_factor, nullptr,
@@ -1025,12 +1113,13 @@ void Estimator::Estimate(std::list<LidarFrame>& lidarFrameList,
     std::vector<std::vector<ceres::CostFunction *>> edgesPlan(windowSize);
     std::vector<std::vector<ceres::CostFunction *>> edgesNon(windowSize);
     std::thread threads[3];
-    for(int f=0; f<windowSize; ++f) {
+    for (int f = 0; f < windowSize; ++f)
+    {
       auto frame_curr = lidarFrameList.begin();
       std::advance(frame_curr, f);
       transformTobeMapped = Eigen::Matrix4d::Identity();
-      transformTobeMapped.topLeftCorner(3,3) = frame_curr->Q * exRbl;
-      transformTobeMapped.topRightCorner(3,1) = frame_curr->Q * exPbl + frame_curr->P;
+      transformTobeMapped.topLeftCorner(3, 3) = frame_curr->Q * exRbl;
+      transformTobeMapped.topRightCorner(3, 1) = frame_curr->Q * exPbl + frame_curr->P;
 
       threads[0] = std::thread(&Estimator::processPointToLine, this,
                                std::ref(edgesLine[f]),
@@ -1067,16 +1156,23 @@ void Estimator::Estimate(std::list<LidarFrame>& lidarFrameList,
     int cntSurf = 0;
     int cntCorner = 0;
     int cntNon = 0;
-    if(windowSize == SLIDEWINDOWSIZE) {
+    if (windowSize == SLIDEWINDOWSIZE)
+    {
       thres_dist = 1.0;
-      if(iterOpt == 0){
-        for(int f=0; f<windowSize; ++f){
+      if (iterOpt == 0)
+      {
+        for (int f = 0; f < windowSize; ++f)
+        {
           int cntFtu = 0;
-          for (auto &e : edgesLine[f]) {
-            if(std::fabs(vLineFeatures[f][cntFtu].error) > 1e-5){
+          for (auto &e : edgesLine[f])
+          {
+            if (std::fabs(vLineFeatures[f][cntFtu].error) > 1e-5)
+            {
               problem.AddResidualBlock(e, loss_function, para_PR[f]);
               vLineFeatures[f][cntFtu].valid = true;
-            }else{
+            }
+            else
+            {
               vLineFeatures[f][cntFtu].valid = false;
             }
             cntFtu++;
@@ -1084,11 +1180,15 @@ void Estimator::Estimate(std::list<LidarFrame>& lidarFrameList,
           }
 
           cntFtu = 0;
-          for (auto &e : edgesPlan[f]) {
-            if(std::fabs(vPlanFeatures[f][cntFtu].error) > 1e-5){
+          for (auto &e : edgesPlan[f])
+          {
+            if (std::fabs(vPlanFeatures[f][cntFtu].error) > 1e-5)
+            {
               problem.AddResidualBlock(e, loss_function, para_PR[f]);
               vPlanFeatures[f][cntFtu].valid = true;
-            }else{
+            }
+            else
+            {
               vPlanFeatures[f][cntFtu].valid = false;
             }
             cntFtu++;
@@ -1096,30 +1196,41 @@ void Estimator::Estimate(std::list<LidarFrame>& lidarFrameList,
           }
 
           cntFtu = 0;
-          for (auto &e : edgesNon[f]) {
-            if(std::fabs(vNonFeatures[f][cntFtu].error) > 1e-5){
+          for (auto &e : edgesNon[f])
+          {
+            if (std::fabs(vNonFeatures[f][cntFtu].error) > 1e-5)
+            {
               problem.AddResidualBlock(e, loss_function, para_PR[f]);
               vNonFeatures[f][cntFtu].valid = true;
-            }else{
+            }
+            else
+            {
               vNonFeatures[f][cntFtu].valid = false;
             }
             cntFtu++;
             cntNon++;
           }
         }
-      }else{
-        for(int f=0; f<windowSize; ++f){
+      }
+      else
+      {
+        for (int f = 0; f < windowSize; ++f)
+        {
           int cntFtu = 0;
-          for (auto &e : edgesLine[f]) {
-            if(vLineFeatures[f][cntFtu].valid) {
+          for (auto &e : edgesLine[f])
+          {
+            if (vLineFeatures[f][cntFtu].valid)
+            {
               problem.AddResidualBlock(e, loss_function, para_PR[f]);
             }
             cntFtu++;
             cntCorner++;
           }
           cntFtu = 0;
-          for (auto &e : edgesPlan[f]) {
-            if(vPlanFeatures[f][cntFtu].valid){
+          for (auto &e : edgesPlan[f])
+          {
+            if (vPlanFeatures[f][cntFtu].valid)
+            {
               problem.AddResidualBlock(e, loss_function, para_PR[f]);
             }
             cntFtu++;
@@ -1127,8 +1238,10 @@ void Estimator::Estimate(std::list<LidarFrame>& lidarFrameList,
           }
 
           cntFtu = 0;
-          for (auto &e : edgesNon[f]) {
-            if(vNonFeatures[f][cntFtu].valid){
+          for (auto &e : edgesNon[f])
+          {
+            if (vNonFeatures[f][cntFtu].valid)
+            {
               problem.AddResidualBlock(e, loss_function, para_PR[f]);
             }
             cntFtu++;
@@ -1136,48 +1249,66 @@ void Estimator::Estimate(std::list<LidarFrame>& lidarFrameList,
           }
         }
       }
-    } else {
-        if(iterOpt == 0) {
-          thres_dist = 10.0;
-        } else {
-          thres_dist = 1.0;
+    }
+    else
+    {
+      if (iterOpt == 0)
+      {
+        thres_dist = 10.0;
+      }
+      else
+      {
+        thres_dist = 1.0;
+      }
+      for (int f = 0; f < windowSize; ++f)
+      {
+        int cntFtu = 0;
+        for (auto &e : edgesLine[f])
+        {
+          if (std::fabs(vLineFeatures[f][cntFtu].error) > 1e-5)
+          {
+            problem.AddResidualBlock(e, loss_function, para_PR[f]);
+            vLineFeatures[f][cntFtu].valid = true;
+          }
+          else
+          {
+            vLineFeatures[f][cntFtu].valid = false;
+          }
+          cntFtu++;
+          cntCorner++;
         }
-        for(int f=0; f<windowSize; ++f){
-          int cntFtu = 0;
-          for (auto &e : edgesLine[f]) {
-            if(std::fabs(vLineFeatures[f][cntFtu].error) > 1e-5){
-              problem.AddResidualBlock(e, loss_function, para_PR[f]);
-              vLineFeatures[f][cntFtu].valid = true;
-            }else{
-              vLineFeatures[f][cntFtu].valid = false;
-            }
-            cntFtu++;
-            cntCorner++;
+        cntFtu = 0;
+        for (auto &e : edgesPlan[f])
+        {
+          if (std::fabs(vPlanFeatures[f][cntFtu].error) > 1e-5)
+          {
+            problem.AddResidualBlock(e, loss_function, para_PR[f]);
+            vPlanFeatures[f][cntFtu].valid = true;
           }
-          cntFtu = 0;
-          for (auto &e : edgesPlan[f]) {
-            if(std::fabs(vPlanFeatures[f][cntFtu].error) > 1e-5){
-              problem.AddResidualBlock(e, loss_function, para_PR[f]);
-              vPlanFeatures[f][cntFtu].valid = true;
-            }else{
-              vPlanFeatures[f][cntFtu].valid = false;
-            }
-            cntFtu++;
-            cntSurf++;
+          else
+          {
+            vPlanFeatures[f][cntFtu].valid = false;
           }
+          cntFtu++;
+          cntSurf++;
+        }
 
-          cntFtu = 0;
-          for (auto &e : edgesNon[f]) {
-            if(std::fabs(vNonFeatures[f][cntFtu].error) > 1e-5){
-              problem.AddResidualBlock(e, loss_function, para_PR[f]);
-              vNonFeatures[f][cntFtu].valid = true;
-            }else{
-              vNonFeatures[f][cntFtu].valid = false;
-            }
-            cntFtu++;
-            cntNon++;
+        cntFtu = 0;
+        for (auto &e : edgesNon[f])
+        {
+          if (std::fabs(vNonFeatures[f][cntFtu].error) > 1e-5)
+          {
+            problem.AddResidualBlock(e, loss_function, para_PR[f]);
+            vNonFeatures[f][cntFtu].valid = true;
           }
+          else
+          {
+            vNonFeatures[f][cntFtu].valid = false;
+          }
+          cntFtu++;
+          cntNon++;
         }
+      }
     }
 
     ceres::Solver::Options options;
@@ -1197,12 +1328,15 @@ void Estimator::Estimate(std::list<LidarFrame>& lidarFrameList,
     double deltaR = (q_before_opti.angularDistance(q_after_opti)) * 180.0 / M_PI;
     double deltaT = (t_before_opti - t_after_opti).norm();
 
-    if (deltaR < 0.05 && deltaT < 0.05 || (iterOpt+1) == max_iters){
-      ROS_INFO("Frame: %d\n",frame_count++);
-      if(windowSize != SLIDEWINDOWSIZE) break;
+    if (deltaR < 0.05 && deltaT < 0.05 || (iterOpt + 1) == max_iters)
+    {
+      ROS_INFO("Frame: %d\n", frame_count++);
+      if (windowSize != SLIDEWINDOWSIZE)
+        break;
       // apply marginalization
       auto *marginalization_info = new MarginalizationInfo();
-      if (last_marginalization_info){
+      if (last_marginalization_info)
+      {
         std::vector<int> drop_set;
         for (int i = 0; i < static_cast<int>(last_marginalization_parameter_blocks.size()); i++)
         {
@@ -1217,14 +1351,14 @@ void Estimator::Estimate(std::list<LidarFrame>& lidarFrameList,
                                                           drop_set);
         marginalization_info->addResidualBlockInfo(residual_block_info);
       }
-      
+
       auto frame_curr = lidarFrameList.begin();
       std::advance(frame_curr, 1);
-      ceres::CostFunction* IMU_Cost = Cost_NavState_PRV_Bias::Create(frame_curr->imuIntegrator,
-                                                                     const_cast<Eigen::Vector3d&>(gravity),
-                                                                     Eigen::LLT<Eigen::Matrix<double, 15, 15>>
-                                                                             (frame_curr->imuIntegrator.GetCovariance().inverse())
-                                                                             .matrixL().transpose());
+      ceres::CostFunction *IMU_Cost = Cost_NavState_PRV_Bias::Create(frame_curr->imuIntegrator,
+                                                                     const_cast<Eigen::Vector3d &>(gravity),
+                                                                     Eigen::LLT<Eigen::Matrix<double, 15, 15>>(frame_curr->imuIntegrator.GetCovariance().inverse())
+                                                                         .matrixL()
+                                                                         .transpose());
       auto *residual_block_info = new ResidualBlockInfo(IMU_Cost, nullptr,
                                                         std::vector<double *>{para_PR[0], para_VBias[0], para_PR[1], para_VBias[1]},
                                                         std::vector<int>{0, 1});
@@ -1232,8 +1366,8 @@ void Estimator::Estimate(std::list<LidarFrame>& lidarFrameList,
 
       int f = 0;
       transformTobeMapped = Eigen::Matrix4d::Identity();
-      transformTobeMapped.topLeftCorner(3,3) = frame_curr->Q * exRbl;
-      transformTobeMapped.topRightCorner(3,1) = frame_curr->Q * exPbl + frame_curr->P;
+      transformTobeMapped.topLeftCorner(3, 3) = frame_curr->Q * exRbl;
+      transformTobeMapped.topRightCorner(3, 1) = frame_curr->Q * exPbl + frame_curr->P;
       edgesLine[f].clear();
       edgesPlan[f].clear();
       edgesNon[f].clear();
@@ -1262,14 +1396,16 @@ void Estimator::Estimate(std::list<LidarFrame>& lidarFrameList,
                                std::ref(laserCloudNonFeatureFromLocal),
                                std::ref(kdtreeNonFeatureFromLocal),
                                std::ref(exTlb),
-                               std::ref(transformTobeMapped));      
-                      
+                               std::ref(transformTobeMapped));
+
       threads[0].join();
       threads[1].join();
       threads[2].join();
       int cntFtu = 0;
-      for (auto &e : edgesLine[f]) {
-        if(vLineFeatures[f][cntFtu].valid){
+      for (auto &e : edgesLine[f])
+      {
+        if (vLineFeatures[f][cntFtu].valid)
+        {
           auto *residual_block_info = new ResidualBlockInfo(e, nullptr,
                                                             std::vector<double *>{para_PR[0]},
                                                             std::vector<int>{0});
@@ -1278,8 +1414,10 @@ void Estimator::Estimate(std::list<LidarFrame>& lidarFrameList,
         cntFtu++;
       }
       cntFtu = 0;
-      for (auto &e : edgesPlan[f]) {
-        if(vPlanFeatures[f][cntFtu].valid){
+      for (auto &e : edgesPlan[f])
+      {
+        if (vPlanFeatures[f][cntFtu].valid)
+        {
           auto *residual_block_info = new ResidualBlockInfo(e, nullptr,
                                                             std::vector<double *>{para_PR[0]},
                                                             std::vector<int>{0});
@@ -1289,8 +1427,10 @@ void Estimator::Estimate(std::list<LidarFrame>& lidarFrameList,
       }
 
       cntFtu = 0;
-      for (auto &e : edgesNon[f]) {
-        if(vNonFeatures[f][cntFtu].valid){
+      for (auto &e : edgesNon[f])
+      {
+        if (vNonFeatures[f][cntFtu].valid)
+        {
           auto *residual_block_info = new ResidualBlockInfo(e, nullptr,
                                                             std::vector<double *>{para_PR[0]},
                                                             std::vector<int>{0});
@@ -1316,8 +1456,10 @@ void Estimator::Estimate(std::list<LidarFrame>& lidarFrameList,
       break;
     }
 
-    if(windowSize != SLIDEWINDOWSIZE) {
-      for(int f=0; f<windowSize; ++f){
+    if (windowSize != SLIDEWINDOWSIZE)
+    {
+      for (int f = 0; f < windowSize; ++f)
+      {
         edgesLine[f].clear();
         edgesPlan[f].clear();
         edgesNon[f].clear();
@@ -1327,12 +1469,12 @@ void Estimator::Estimate(std::list<LidarFrame>& lidarFrameList,
       }
     }
   }
-
 }
-void Estimator::MapIncrementLocal(const pcl::PointCloud<PointType>::Ptr& laserCloudCornerStack,
-                                  const pcl::PointCloud<PointType>::Ptr& laserCloudSurfStack,
-                                  const pcl::PointCloud<PointType>::Ptr& laserCloudNonFeatureStack,
-                                  const Eigen::Matrix4d& transformTobeMapped){
+void Estimator::MapIncrementLocal(const pcl::PointCloud<PointType>::Ptr &laserCloudCornerStack,
+                                  const pcl::PointCloud<PointType>::Ptr &laserCloudSurfStack,
+                                  const pcl::PointCloud<PointType>::Ptr &laserCloudNonFeatureStack,
+                                  const Eigen::Matrix4d &transformTobeMapped)
+{
   int laserCloudCornerStackNum = laserCloudCornerStack->points.size();
   int laserCloudSurfStackNum = laserCloudSurfStack->points.size();
   int laserCloudNonFeatureStackNum = laserCloudNonFeatureStack->points.size();
@@ -1342,20 +1484,24 @@ void Estimator::MapIncrementLocal(const pcl::PointCloud<PointType>::Ptr& laserCl
   localCornerMap[Id]->clear();
   localSurfMap[Id]->clear();
   localNonFeatureMap[Id]->clear();
-  for (int i = 0; i < laserCloudCornerStackNum; i++) {
+  for (int i = 0; i < laserCloudCornerStackNum; i++)
+  {
     MAP_MANAGER::pointAssociateToMap(&laserCloudCornerStack->points[i], &pointSel, transformTobeMapped);
     localCornerMap[Id]->push_back(pointSel);
   }
-  for (int i = 0; i < laserCloudSurfStackNum; i++) {
+  for (int i = 0; i < laserCloudSurfStackNum; i++)
+  {
     MAP_MANAGER::pointAssociateToMap(&laserCloudSurfStack->points[i], &pointSel2, transformTobeMapped);
     localSurfMap[Id]->push_back(pointSel2);
   }
-  for (int i = 0; i < laserCloudNonFeatureStackNum; i++) {
+  for (int i = 0; i < laserCloudNonFeatureStackNum; i++)
+  {
     MAP_MANAGER::pointAssociateToMap(&laserCloudNonFeatureStack->points[i], &pointSel2, transformTobeMapped);
     localNonFeatureMap[Id]->push_back(pointSel2);
   }
 
-  for (int i = 0; i < localMapWindowSize; i++) {
+  for (int i = 0; i < localMapWindowSize; i++)
+  {
     *laserCloudCornerFromLocal += *localCornerMap[i];
     *laserCloudSurfFromLocal += *localSurfMap[i];
     *laserCloudNonFeatureFromLocal += *localNonFeatureMap[i];
@@ -1372,5 +1518,5 @@ void Estimator::MapIncrementLocal(const pcl::PointCloud<PointType>::Ptr& laserCl
   downSizeFilterNonFeature.setInputCloud(laserCloudNonFeatureFromLocal);
   downSizeFilterNonFeature.filter(*temp3);
   laserCloudNonFeatureFromLocal = temp3;
-  localMapID ++;
+  localMapID++;
 }

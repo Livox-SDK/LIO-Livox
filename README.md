@@ -1,3 +1,127 @@
+<a href="#"><img src="https://img.shields.io/badge/c++-%2300599C.svg?style=flat&logo=c%2B%2B&logoColor=white"></img></a>
+  <a href="#"><img src="https://img.shields.io/github/stars/chengwei0427/LIO-Livox-modified"></img></a>
+  <a href="#"><img src="https://img.shields.io/github/forks/chengwei0427/LIO-Livox-modified"></img></a>
+  <a href="#"><img src="https://img.shields.io/github/repo-size/chengwei0427/LIO-Livox-modified"></img></a>
+  <a href="https://github.com/chengwei0427/LIO-Livox-modified/issues"><img src="https://img.shields.io/github/issues/chengwei0427/LIO-Livox-modified"></img></a>
+  <a href="https://github.com/chengwei0427/LIO-Livox-modified/graphs/contributors"><img src="https://img.shields.io/github/contributors/chengwei0427/LIO-Livox-modified?color=blue"></img></a>
+
+
+# Lio-spinning-lidar
+
+This repository is a modified LiDAR-inertial odometry system for Spinning LiDAR. The system is developed based on the open-source odometry framework [**LIO-Livox**](https://github.com/Livox-SDK/LIO-Livox) to get the odometry information. And the feature extract moudle is implemented based on [**LIO-SAM**](https://github.com/TixiaoShan/LIO-SAM) .
+
+## Modification
+
+  - Feature extract moudle is implemented based on lio-sam, this moudle support velodyne,ouster and livox lidar;
+  - Modify the PoseEstimation moudle , **not rely on sophus**,--[**This part is not uploaded to the repository**].
+  - map manager use ikdtree instead of the original two individual (global & local) map；
+  
+  [update 2022-07-06]
+
+  - use mid-integrate instead of euler-integrate;
+  - use analytic derivative instead of automatic derivative(lidar-factor and imu-factor);
+
+## demo
+
+**Test with ouster-32(os1),holding OS laser, riding a scooter to collect this test data**
+<div align="center">
+<img src="./doc/lio-livox.gif" width="1000px">
+</div>
+
+**Test with west.bag(lio-sam)**
+<div align="center">
+<img src="./doc/west.png" width="1000px">
+</div>
+
+## Example results 
+- city road test with vlp-16 vehicle-mounted  [bilibili video](https://www.bilibili.com/video/BV1wZ4y1174Z?spm_id_from=333.337.search-card.all.click) 
+- city road test with OS1-32, riding a scooter [bilibili video](https://www.bilibili.com/video/BV1UR4y1N7rs?spm_id_from=333.337.search-card.all.click)
+
+##	time compare (ikdtree and the original)
+
+<div align="center">
+<img src="./doc/time0.png" width="1000px">
+</div>
+
+map manager use ikdtree instead of the original two individual (global & local) map.
+
+### notes
+
+- Ikd-tree is not necessarily a good way when you need to re-search the nearest neighbor points every time.It takes more time than the original KDTree.you can have a look [here](https://github.com/LimHyungTae/ikd_tree_ros)
+
+## new PoseEstimation [update 2022-07-06]
+
+#### Test with ouster-OS1-32, corresponding test [VIDEO](https://www.bilibili.com/video/BV1na41197FZ?spm_id_from=333.999.0.0&vd_source=438f630fe29bd5049b24c7f05b1bcaa3)
+
+delta_R and delta_T [the difference between (imu preintegrate) predict pose and the optimized pose]
+<div align="center">
+<img src="./doc/gr_loam_and_gr_lio_analytic.png" width="1000px">
+</div>
+
+Time about process one frame lidar data.
+<div align="center">
+<img src="./doc/gr_loam_and_gr_lio_analytic_t.png" width="1000px">
+</div>
+
+#### Test with velodyne-16(lio-sam dataset: park)
+
+delta_R and delta_T [the difference between (imu preintegrate) predict pose and the optimized pose]
+<div align="center">
+<img src="./doc/park_rt.png" width="1000px">
+</div>
+
+Time about process one frame lidar data.
+<div align="center">
+<img src="./doc/park_t.png" width="1000px">
+</div>
+
+#### Test with velodyne-16(lio-sam dataset: casual_walk)
+
+delta_R and delta_T [the difference between (imu preintegrate) predict pose and the optimized pose]
+<div align="center">
+<img src="./doc/casual_walk_rt.png" width="1000px">
+</div>
+
+Time about process one frame lidar data.
+<div align="center">
+<img src="./doc/casual_walk_t.png" width="1000px">
+</div>
+
+#### Test with velodyne-16(LIO_SAM_6AXIS dataset: hkust_20201105full)
+
+delta_R and delta_T [the difference between (imu preintegrate) predict pose and the optimized pose]
+<div align="center">
+<img src="./doc/hkust_20201105full_rt.png" width="1000px">
+</div>
+
+Time about process one frame lidar data.
+<div align="center">
+<img src="./doc/hkust_20201105full_t.png" width="1000px">
+</div>
+
+evo_ape test
+<div align="center">
+<img src="./doc/hkust_20201105full_ape.png" width="1000px">
+</div>
+
+evo_rpe test
+<div align="center">
+<img src="./doc/hkust_20201105full_rpe.png" width="1000px">
+</div>
+
+evo_traj test
+<div align="center">
+<img src="./doc/hkust_20201105full_traj_xyz.png" width="1000px">
+</div>
+
+evo_traj test
+<div align="center">
+<img src="./doc/hkust_20201105full_traj_rpy.png" width="1000px">
+</div>
+
+--------------=----------------------------  divide line  ----------------------------------------------
+
+
 # LIO-Livox (A Robust LiDAR-Inertial Odometry for Livox LiDAR)
 This respository implements a robust LiDAR-inertial odometry system for Livox LiDAR. 
 The system uses only a single Livox LiDAR with a built-in IMU. It has a robust initialization module, 
@@ -40,7 +164,7 @@ local geometry properties. We first extract points with large curvature and isol
 For points with different distance, thresholds are set to different values, in order to make the distribution of points in space as uniform as possible. 
 
 <div align="center">
-<img src="./doc/feature extraction.png" height="400px">
+<img src="./doc/feature_extraction.png" height="400px">
 </div>
 
 In the node "PoseEstimation", the motion distortion of the point cloud is compensated using IMU preintegration or constant velocity model. Then the IMU initialization module is performed. If the Initialization

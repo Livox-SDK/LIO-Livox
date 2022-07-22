@@ -1,0 +1,25 @@
+  # Topics
+  pointCloudTopic:  "/points_raw" #"/os_cloud_node/points" #"velodyne_points"    "points_raw"     rslidar_points      # Point cloud data
+  # imuTopic: "/os_cloud_node/imu" #"imu_data" #"imu_raw"                         # IMU data
+
+  # Frames
+  lidarFrame: "base_link"
+
+  # Sensor Settings
+  sensor: velodyne #velodyne                            # lidar sensor type, either 'velodyne' or 'ouster' 'robosense'
+  N_SCAN: 16                                  # number of lidar channel (i.e., 16, 32, 64, 128)
+  Horizon_SCAN: 1800                          # lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048)
+  downsampleRate: 1                           # default: 1. Downsample your data if too many points. i.e., 16 = 64 / 4, 16 = 16 / 1
+  lidarMinRange: 1.0                          # default: 1.0, minimum lidar range to be used
+  lidarMaxRange: 1000.0                       # default: 1000.0, maximum lidar range to be used
+
+  # LOAM feature threshold
+  edgeThreshold: 1.0
+  surfThreshold: 0.1
+  edgeFeatureMinValidNum: 10
+  surfFeatureMinValidNum: 100
+
+  # voxel filter paprams
+  odometrySurfLeafSize: 0.5                     # default: 0.4 - outdoor, 0.2 - indoor  only use surf ds here
+  # mappingCornerLeafSize: 0.2                    # default: 0.2 - outdoor, 0.1 - indoor
+  # mappingSurfLeafSize: 0.4                      # default: 0.4 - outdoor, 0.2 - indoor

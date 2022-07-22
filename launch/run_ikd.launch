@@ -1,0 +1,39 @@
+<launch>
+
+    <arg name="project" default="GC_LOAM"/>
+    
+    <node pkg="tf" type="static_transform_publisher" name="base_link_joint" args="0 0 0 0 0 0 base_link chassis_link 100" />
+    <node pkg="tf" type="static_transform_publisher" name="imu_joint" args="0 0 0 0 0 0 chassis_link imu_link 100" />
+    <node pkg="tf" type="static_transform_publisher" name="gps_joint" args="0 0 0 0 0 0 chassis_link gps_link 100" />
+    <node pkg="tf" type="static_transform_publisher" name="velodyne_joint" args="0 0 0 0 0 0 chassis_link velodyne 100" />
+
+    <!-- Parameters -->
+    <rosparam file="$(find GC_LOAM)/config/params.yaml" command="load" />
+
+    <!--- LOAM -->
+    <node pkg="$(arg project)" type="$(arg project)_featureExtract"   name="$(arg project)_featureExtract"    output="screen" 	respawn="true"/>
+
+    <node pkg="$(arg project)" type="$(arg project)_lio_odometry"   name="$(arg project)_lio_odometry"    output="screen">
+        <remap from="/imu_data" to="/os_cloud_node/imu" />
+        <!-- 0-Not Use IMU, 1-Use IMU remove Rotation Distort, 2-Tightly Coupled IMU -->
+        <param name="IMU_Mode" type="int" value="1" />
+        <!-- Voxel Filter Size Use to Downsize Map Cloud -->
+        <param name="filter_parameter_corner" type="double" value="0.3" />
+        <param name="filter_parameter_surf" type="double" value="1.0" />
+        <!-- Extrinsic Parameter between Lidar & IMU -->
+        <rosparam param="Extrinsic_Tlb"> [1.0, 0.0, 0.0,  0.0,
+                                          0.0, 1.0, 0.0,  0.0,
+                                          0.0, 0.0, 1.0,  0.0,
+                                          0.0, 0.0, 0.0,  1.0]</rosparam>
+    </node>
+
+    <!--- Run Rviz-->
+    <node pkg="rviz" type="rviz" name="$(arg project)_rviz" args="-d $(find GC_LOAM)/launch/rviz.rviz" />
+
+
+    <arg name="bag_filename" default="/media/cc/64BE51E9BE51B470/DATA/OS1-64/2021-08-12-10-48-23.bag"/>
+    <!-- <arg name="bag_filename" default="/media/cc/A0EC52D0EC52A078/DATA/VLP-16/2022-02-25-13-36-53.bag"/> -->
+    <!-- <arg name="bag_filename" default="/media/cc/A0EC52D0EC52A078/DATA/wistron/new_driver/2021-09-28-11-05-20.bag"/> -->
+    <!-- <node name="playbag" pkg="rosbag" type="play" args="clock $(arg bag_filename) -s 10 -r 1.0 topic /os_cloud_node/points /os_cloud_node/imu /pr2_base_odometry/odom" /> -->
+
+</launch>
