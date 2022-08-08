@@ -892,8 +892,8 @@ void Estimator::EstimateLidarPose(std::list<LidarFrame>& lidarFrameList,
     downSizeFilterNonFeature.filter(*laserCloudNonFeatureStack[stack_count]);
     stack_count++;
   }
-  if ( ((laserCloudCornerFromMapNum > 0 && laserCloudSurfFromMapNum > 100) || 
-       (laserCloudCornerFromLocalNum > 0 && laserCloudSurfFromLocalNum > 100))) {
+  if ( ((laserCloudCornerFromMapNum >= 0 && laserCloudSurfFromMapNum > 100) || 
+       (laserCloudCornerFromLocalNum >= 0 && laserCloudSurfFromLocalNum > 100))) {
     Estimate(lidarFrameList, exTlb, gravity);
   }
 

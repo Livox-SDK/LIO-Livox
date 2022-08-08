@@ -700,6 +700,98 @@ void LidarFeatureExtractor::FeatureExtract_with_segment(const livox_ros_driver::
 
 }
 
+void LidarFeatureExtractor::FeatureExtract_with_segment_hap(const livox_ros_driver::CustomMsgConstPtr &msg,
+                                                            pcl::PointCloud<PointType>::Ptr& laserCloud,
+                                                            pcl::PointCloud<PointType>::Ptr& laserConerFeature,
+                                                            pcl::PointCloud<PointType>::Ptr& laserSurfFeature,
+                                                            pcl::PointCloud<PointType>::Ptr& laserNonFeature,
+                                                            sensor_msgs::PointCloud2 &msg_seg,
+                                                            const int Used_Line){
+  laserCloud->clear();
+  laserConerFeature->clear();
+  laserSurfFeature->clear();
+  laserCloud->clear();
+  laserCloud->reserve(15000*N_SCANS);
+  for(auto & ptr : vlines){
+    ptr->clear();
+  }
+  for(auto & v : vcorner){
+    v.clear();
+  }
+  for(auto & v : vsurf){
+    v.clear();
+  }
+
+  int dnum = msg->points.size();
+
+  int *idtrans = (int*)calloc(dnum, sizeof(int));
+  float *data=(float*)calloc(dnum*4,sizeof(float));
+  int point_num = 0;
+
+  double timeSpan = ros::Time().fromNSec(msg->points.back().offset_time).toSec();
+  PointType point;
+  for(const auto& p : msg->points){
+
+    int line_num = (int)p.line;
+    if(line_num > Used_Line-1) continue;
+    if(p.x < 0.01) continue;
+    if (!pcl_isfinite(p.x) ||
+        !pcl_isfinite(p.y) ||
+        !pcl_isfinite(p.z)) {
+      continue;
+    }
+    point.x = p.x;
+    point.y = p.y;
+    point.z = p.z;
+    point.intensity = p.reflectivity;
+    point.normal_x = ros::Time().fromNSec(p.offset_time).toSec() /timeSpan;
+    point.normal_y = _int_as_float(line_num);
+    laserCloud->push_back(point);
+
+    data[point_num*4+0] = point.x;
+    data[point_num*4+1] = point.y;
+    data[point_num*4+2] = point.z;
+    data[point_num*4+3] = point.intensity;
+
+
+    point_num++;
+  }
+
+  PCSeg pcseg;
+  pcseg.DoSeg(idtrans,data,dnum);
+
+  std::size_t cloud_num = laserCloud->size();
+
+  detectFeaturePoint2(laserCloud, laserSurfFeature, laserNonFeature);
+
+  for(std::size_t i=0; i<cloud_num; ++i){
+    float dis = laserCloud->points[i].x * laserCloud->points[i].x
+                + laserCloud->points[i].y * laserCloud->points[i].y
+                + laserCloud->points[i].z * laserCloud->points[i].z;
+    if( idtrans[i] > 9 && dis < 50*50){
+      laserCloud->points[i].normal_z = 0;
+    }
+  }
+
+  pcl::PointCloud<PointType>::Ptr laserConerFeature_filter;
+  laserConerFeature_filter.reset(new pcl::PointCloud<PointType>());
+  laserConerFeature.reset(new pcl::PointCloud<PointType>());
+  laserSurfFeature.reset(new pcl::PointCloud<PointType>());
+  laserNonFeature.reset(new pcl::PointCloud<PointType>());
+  for(const auto& p : laserCloud->points){
+    if(std::fabs(p.normal_z - 1.0) < 1e-5)
+      laserConerFeature->push_back(p);
+  }
+
+  for(const auto& p : laserCloud->points){
+    if(std::fabs(p.normal_z - 2.0) < 1e-5)
+      laserSurfFeature->push_back(p);
+    if(std::fabs(p.normal_z - 3.0) < 1e-5)
+      laserNonFeature->push_back(p);
+  }
+
+}
+
 
 void LidarFeatureExtractor::detectFeaturePoint2(pcl::PointCloud<PointType>::Ptr& cloud,
                                                 pcl::PointCloud<PointType>::Ptr& pointsLessFlat,
@@ -1154,5 +1246,69 @@ void LidarFeatureExtractor::FeatureExtract(const livox_ros_driver::CustomMsgCons
   for(const auto& p : laserCloud->points){
   if(std::fabs(p.normal_z - 2.0) < 1e-5)
   laserSurfFeature->push_back(p);
+  }
+}
+
+void LidarFeatureExtractor::FeatureExtract_hap(const livox_ros_driver::CustomMsgConstPtr &msg,
+                                               pcl::PointCloud<PointType>::Ptr& laserCloud,
+                                               pcl::PointCloud<PointType>::Ptr& laserConerFeature,
+                                               pcl::PointCloud<PointType>::Ptr& laserSurfFeature,
+                                               pcl::PointCloud<PointType>::Ptr& laserNonFeature,
+                                               const int Used_Line){
+  laserCloud->clear();
+  laserConerFeature->clear();
+  laserSurfFeature->clear();
+  laserCloud->clear();
+  laserCloud->reserve(15000*N_SCANS);
+  for(auto & ptr : vlines){
+    ptr->clear();
+  }
+  for(auto & v : vcorner){
+    v.clear();
+  }
+  for(auto & v : vsurf){
+    v.clear();
+  }
+
+  int dnum = msg->points.size();
+
+  double timeSpan = ros::Time().fromNSec(msg->points.back().offset_time).toSec();
+  PointType point;
+  for(const auto& p : msg->points){
+
+    int line_num = (int)p.line;
+    if(line_num > Used_Line-1) continue;
+    if(p.x < 0.01) continue;
+    if (!pcl_isfinite(p.x) ||
+        !pcl_isfinite(p.y) ||
+        !pcl_isfinite(p.z)) {
+      continue;
+    }
+    point.x = p.x;
+    point.y = p.y;
+    point.z = p.z;
+    point.intensity = p.reflectivity;
+    point.normal_x = ros::Time().fromNSec(p.offset_time).toSec() /timeSpan;
+    point.normal_y = _int_as_float(line_num);
+    laserCloud->push_back(point);
+  }
+
+  detectFeaturePoint2(laserCloud, laserSurfFeature, laserNonFeature);
+
+  pcl::PointCloud<PointType>::Ptr laserConerFeature_filter;
+  laserConerFeature_filter.reset(new pcl::PointCloud<PointType>());
+  laserConerFeature.reset(new pcl::PointCloud<PointType>());
+  laserSurfFeature.reset(new pcl::PointCloud<PointType>());
+  laserNonFeature.reset(new pcl::PointCloud<PointType>());
+  for(const auto& p : laserCloud->points){
+    if(std::fabs(p.normal_z - 1.0) < 1e-5)
+      laserConerFeature->push_back(p);
+  }
+
+  for(const auto& p : laserCloud->points){
+    if(std::fabs(p.normal_z - 2.0) < 1e-5)
+      laserSurfFeature->push_back(p);
+    if(std::fabs(p.normal_z - 3.0) < 1e-5)
+      laserNonFeature->push_back(p);
   }
 }

@@ -64,6 +64,15 @@ public:
                                      pcl::PointCloud<PointType>::Ptr& laserNonFeature,
                                      sensor_msgs::PointCloud2 &msg2,
                                      int Used_Line = 1);
+
+    void FeatureExtract_with_segment_hap(const livox_ros_driver::CustomMsgConstPtr &msg,
+                                     	 pcl::PointCloud<PointType>::Ptr& laserCloud,
+                                     	 pcl::PointCloud<PointType>::Ptr& laserConerFeature,
+                                     	 pcl::PointCloud<PointType>::Ptr& laserSurfFeature,
+                                     	 pcl::PointCloud<PointType>::Ptr& laserNonFeature,
+                                     	 sensor_msgs::PointCloud2 &msg2,
+                                     	 int Used_Line = 1);
+
     /** \brief Detect lidar feature points of CustomMsg
       * \param[in] msg: original CustomMsg need to be detected
       * \param[in] laserCloud: transform CustomMsg to pcl point cloud format
@@ -75,6 +84,13 @@ public:
                         pcl::PointCloud<PointType>::Ptr& laserConerFeature,
                         pcl::PointCloud<PointType>::Ptr& laserSurfFeature,
                         int Used_Line = 1);
+
+    void FeatureExtract_hap(const livox_ros_driver::CustomMsgConstPtr &msg,
+                            pcl::PointCloud<PointType>::Ptr& laserCloud,
+                            pcl::PointCloud<PointType>::Ptr& laserConerFeature,
+                            pcl::PointCloud<PointType>::Ptr& laserSurfFeature,
+			    pcl::PointCloud<PointType>::Ptr& laserNonFeature,
+                            int Used_Line = 1);
 
 private:
     /** \brief lines used to extract lidar features */

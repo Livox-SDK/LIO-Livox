@@ -26,7 +26,7 @@ The system consists of two ros nodes: ScanRegistartion and PoseEstimation.
 *  In the node "PoseEstimation", the main thread aims to estimate sensor poses, while another thread in the class "Estimator" uses the class "MapManager" to build and manage feature maps.
 
 The system is mainly designed for car platforms in the large scale outdoor environment.
-Users can easily run the system with a Livox Horizon LiDAR.Horizon 
+Users can easily run the system with a Livox Horizon or HAP LiDAR. 
 
 The system starts with the node "ScanRegistartion", where feature points are extracted. Before the feature extraction, dynamic objects are removed from the raw point cloud, since in urban scenes there are usually many dynamic objects, which 
 affect system robustness and precision. For the dynamic objects filter, we use a fast point cloud segmentation method. The Euclidean clustering is applied to group points into some clusters. The raw point cloud is divided into ground points, background points, and foreground points. 
@@ -101,7 +101,7 @@ roslaunch lio_livox horizon.launch
 ```
 
 ## Notes:
-The current version of the system is only adopted for Livox Horizon. In theory, it should be able to run directly with a Livox Avia, but we haven't done enough tests.
+The current version of the system is only adopted for Livox Horizon and Livox HAP. In theory, it should be able to run directly with a Livox Avia, but we haven't done enough tests.
 Besides, the system doesn't provide a interface of Livox mid series. If you want use mid-40 or mid-70, you can try [livox_mapping](https://github.com/Livox-SDK/livox_mapping).
 
 The topic of point cloud messages is /livox/lidar and its type is livox_ros_driver/CustomMsg. \
