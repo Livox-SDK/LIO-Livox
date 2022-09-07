@@ -30,12 +30,24 @@ struct OusterPointXYZIRT
     uint32_t t;
     uint16_t reflectivity;
     uint8_t ring;
-    uint16_t noise;
+    // uint16_t noise;
+    uint16_t ambient;
     uint32_t range;
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 } EIGEN_ALIGN16;
 POINT_CLOUD_REGISTER_POINT_STRUCT(OusterPointXYZIRT,
-                                  (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(uint32_t, t, t)(uint16_t, reflectivity, reflectivity)(uint8_t, ring, ring)(uint16_t, noise, noise)(uint32_t, range, range))
+                                  (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(uint32_t, t, t)(uint16_t, reflectivity, reflectivity)(uint8_t, ring, ring)(uint16_t, ambient, ambient /*noise, noise*/)(uint32_t, range, range))
+
+struct rsPointXYZIRT
+{
+    PCL_ADD_POINT4D;
+    uint8_t intensity;
+    uint16_t ring = 0;
+    double timestamp = 0;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+} EIGEN_ALIGN16;
+POINT_CLOUD_REGISTER_POINT_STRUCT(rsPointXYZIRT,
+                                  (float, x, x)(float, y, y)(float, z, z)(uint8_t, intensity, intensity)(uint16_t, ring, ring)(double, timestamp, timestamp))
 
 // typedef pcl::PointXYZI PointType;
 typedef pcl::PointXYZINormal PointType;

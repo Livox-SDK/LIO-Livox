@@ -641,7 +641,7 @@ int main(int argc, char **argv)
   exPlb = t;
   exPbl = -1.0 * exRbl * exPlb;
 
-  ros::Subscriber subFullCloud = nodeHandler.subscribe<sensor_msgs::PointCloud2>("/full_cloud", 10, fullCallBack);
+  ros::Subscriber subFullCloud = nodeHandler.subscribe<sensor_msgs::PointCloud2>("/laser_cloud_filtered", 10, fullCallBack);
   ros::Subscriber sub_imu;
   if (IMU_Mode > 0)
     sub_imu = nodeHandler.subscribe("/imu_data", 2000, imu_callback, ros::TransportHints().unreliable());
