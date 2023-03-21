@@ -15,10 +15,8 @@ Videos of the demonstration of the system can be found on Youtube and Bilibili. 
 <img src="./doc/urban_complex.gif" width="850px">
 </div>
 <div align="center">
-<img src="./doc/indoor_restaurant.gif" width="425px" height="270px"/><img src="./doc/food_plaza.gif" width="425px" height="270px"> 
-</div>
-<div align="center">
-<img src="./doc/factory.gif" width="425px" height="270px"/><img src="./doc/plaza.gif" width="425px" height="270px"> 
+<img src="./doc/factory.gif" width="850px">
+<img src="./doc/plaza.gif" width="850px"> 
 </div>
 ## System achritecture
 
