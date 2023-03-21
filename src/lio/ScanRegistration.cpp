@@ -25,7 +25,7 @@ void lidarCallBackHorizon(const livox_ros_driver::CustomMsgConstPtr &msg) {
     lidarFeatureExtractor->FeatureExtract_with_segment(msg, laserCloud, laserConerCloud, laserSurfCloud, laserNonFeatureCloud, msg2,N_SCANS);
   }
   else{
-    lidarFeatureExtractor->FeatureExtract(msg, laserCloud, laserConerCloud, laserSurfCloud,N_SCANS);
+    lidarFeatureExtractor->FeatureExtract(msg, laserCloud, laserConerCloud, laserSurfCloud,N_SCANS,Lidar_Type);
   } 
 
   sensor_msgs::PointCloud2 laserCloudMsg;
@@ -55,15 +55,53 @@ void lidarCallBackHAP(const livox_ros_driver::CustomMsgConstPtr &msg) {
 
 }
 
+void lidarCallBackPc2(const sensor_msgs::PointCloud2ConstPtr &msg) {
+    pcl::PointCloud<pcl::PointXYZI>::Ptr laser_cloud(new pcl::PointCloud<pcl::PointXYZI>());
+    pcl::PointCloud<pcl::PointXYZINormal>::Ptr laser_cloud_custom(new pcl::PointCloud<pcl::PointXYZINormal>());
+
+    pcl::fromROSMsg(*msg, *laser_cloud);
+
+    for (uint64_t i = 0; i < laser_cloud->points.size(); i++)
+    {
+        auto p=laser_cloud->points.at(i);
+        pcl::PointXYZINormal p_custom;
+        if(Lidar_Type == 0||Lidar_Type == 1)
+        {
+            if(p.x < 0.01) continue;
+        }
+        else if(Lidar_Type == 2)
+        {
+            if(std::fabs(p.x) < 0.01) continue;
+        }
+        p_custom.x=p.x;
+        p_custom.y=p.y;
+        p_custom.z=p.z;
+        p_custom.intensity=p.intensity;
+        p_custom.normal_x=float (i)/float(laser_cloud->points.size());
+        p_custom.normal_y=i%4;
+        laser_cloud_custom->points.push_back(p_custom);
+    }
+
+    lidarFeatureExtractor->FeatureExtract_Mid(laser_cloud_custom, laserConerCloud, laserSurfCloud);
+
+    sensor_msgs::PointCloud2 laserCloudMsg;
+    pcl::toROSMsg(*laser_cloud_custom, laserCloudMsg);
+    laserCloudMsg.header = msg->header;
+    pubFullLaserCloud.publish(laserCloudMsg);
+
+}
+
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "ScanRegistration");
   ros::NodeHandle nodeHandler("~");
 
-  ros::Subscriber customCloud;;
+  ros::Subscriber customCloud,pc2Cloud;
 
   std::string config_file;
+  int msg_type=0;
   nodeHandler.getParam("config_file", config_file);
+  nodeHandler.getParam("msg_type", msg_type);
 
   cv::FileStorage fsSettings(config_file, cv::FileStorage::READ);
   if (!fsSettings.isOpened()) {
@@ -84,6 +122,7 @@ int main(int argc, char** argv)
   float LidarNearestDis = static_cast<float>(fsSettings["LidarNearestDis"]);
   float KdTreeCornerOutlierDis = static_cast<float>(fsSettings["KdTreeCornerOutlierDis"]);
 
+
   laserCloud.reset(new pcl::PointCloud<PointType>);
   laserConerCloud.reset(new pcl::PointCloud<PointType>);
   laserSurfCloud.reset(new pcl::PointCloud<PointType>);
@@ -97,7 +136,12 @@ int main(int argc, char** argv)
   {
     customCloud = nodeHandler.subscribe<livox_ros_driver::CustomMsg>("/livox/lidar", 100, &lidarCallBackHAP);
   }
-
+  else if(Lidar_Type==2){
+      if (msg_type==0)
+          customCloud = nodeHandler.subscribe<livox_ros_driver::CustomMsg>("/livox/lidar", 100, &lidarCallBackHorizon);
+      else if(msg_type==1)
+          pc2Cloud=nodeHandler.subscribe<sensor_msgs::PointCloud2>("/livox/lidar", 100, &lidarCallBackPc2);
+  }
   pubFullLaserCloud = nodeHandler.advertise<sensor_msgs::PointCloud2>("/livox_full_cloud", 10);
   pubSharpCloud = nodeHandler.advertise<sensor_msgs::PointCloud2>("/livox_less_sharp_cloud", 10);
   pubFlatCloud = nodeHandler.advertise<sensor_msgs::PointCloud2>("/livox_less_flat_cloud", 10);

@@ -1187,7 +1187,7 @@ void LidarFeatureExtractor::FeatureExtract(const livox_ros_driver::CustomMsgCons
                                            pcl::PointCloud<PointType>::Ptr& laserCloud,
                                            pcl::PointCloud<PointType>::Ptr& laserConerFeature,
                                            pcl::PointCloud<PointType>::Ptr& laserSurfFeature,
-                                           const int Used_Line){
+                                           const int Used_Line,const int lidar_type){
   laserCloud->clear();
   laserConerFeature->clear();
   laserSurfFeature->clear();
@@ -1206,7 +1206,15 @@ void LidarFeatureExtractor::FeatureExtract(const livox_ros_driver::CustomMsgCons
   for(const auto& p : msg->points){
   int line_num = (int)p.line;
   if(line_num > Used_Line-1) continue;
-  if(p.x < 0.01) continue;
+  if(lidar_type == 0||lidar_type == 1)
+  {
+      if(p.x < 0.01) continue;
+  }
+  else if(lidar_type == 2)
+  {
+      if(std::fabs(p.x) < 0.01) continue;
+  }
+//  if(p.x < 0.01) continue;
   point.x = p.x;
   point.y = p.y;
   point.z = p.z;
@@ -1311,4 +1319,53 @@ void LidarFeatureExtractor::FeatureExtract_hap(const livox_ros_driver::CustomMsg
     if(std::fabs(p.normal_z - 3.0) < 1e-5)
       laserNonFeature->push_back(p);
   }
+}
+
+void LidarFeatureExtractor::FeatureExtract_Mid(pcl::PointCloud<pcl::PointXYZINormal>::Ptr &msg,
+                                           pcl::PointCloud<PointType>::Ptr& laserConerFeature,
+                                           pcl::PointCloud<PointType>::Ptr& laserSurfFeature){
+    laserConerFeature->clear();
+    laserSurfFeature->clear();
+    for(auto & ptr : vlines){
+        ptr->clear();
+    }
+    for(auto & v : vcorner){
+        v.clear();
+    }
+    for(auto & v : vsurf){
+        v.clear();
+    }
+    int cloud_num= msg->points.size();
+    for(int i=0; i<cloud_num; ++i){
+        int line_idx = std::round(msg->points[i].normal_y);
+        msg->points[i].normal_z = _int_as_float(i);
+
+        vlines[line_idx]->push_back(msg->points[i]);
+
+        msg->points[i].normal_z = 0;
+    }
+    std::thread threads[N_SCANS];
+    for(int i=0; i<N_SCANS; ++i){
+        threads[i] = std::thread(&LidarFeatureExtractor::detectFeaturePoint, this, std::ref(vlines[i]),
+                                 std::ref(vcorner[i]), std::ref(vsurf[i]));
+    }
+    for(int i=0; i<N_SCANS; ++i){
+        threads[i].join();
+    }
+    for(int i=0; i<N_SCANS; ++i){
+        for(int j=0; j<vcorner[i].size(); ++j){
+            msg->points[_float_as_int(vlines[i]->points[vcorner[i][j]].normal_z)].normal_z = 1.0;
+        }
+        for(int j=0; j<vsurf[i].size(); ++j){
+            msg->points[_float_as_int(vlines[i]->points[vsurf[i][j]].normal_z)].normal_z = 2.0;
+        }
+    }
+    for(const auto& p : msg->points){
+        if(std::fabs(p.normal_z - 1.0) < 1e-5)
+            laserConerFeature->push_back(p);
+    }
+    for(const auto& p : msg->points){
+        if(std::fabs(p.normal_z - 2.0) < 1e-5)
+            laserSurfFeature->push_back(p);
+    }
 }

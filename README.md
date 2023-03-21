@@ -14,7 +14,14 @@ Videos of the demonstration of the system can be found on Youtube and Bilibili. 
 <img src="./doc/urban_dynamic.gif" width="850px">
 <img src="./doc/urban_complex.gif" width="850px">
 </div>
-
+<div align="center">
+<img src="./doc/indoor_restaurant.gif" width="425px" height="270px"/> 
+<img src="./doc/food_plaza.gif" width="425px" height="270px"> 
+</div>
+<div align="center">
+<img src="./doc/factory.gif" width="425px" height="270px"/> 
+<img src="./doc/plaza.gif" width="425px" height="270px"> 
+</div>
 ## System achritecture
 
 <div align="center">
@@ -26,7 +33,7 @@ The system consists of two ros nodes: ScanRegistartion and PoseEstimation.
 *  In the node "PoseEstimation", the main thread aims to estimate sensor poses, while another thread in the class "Estimator" uses the class "MapManager" to build and manage feature maps.
 
 The system is mainly designed for car platforms in the large scale outdoor environment.
-Users can easily run the system with a Livox Horizon or HAP LiDAR. 
+Users can easily run the system with a Livox Horizon or HAP LiDAR. It is still stable in indoor,we also support Mid-360 which is designed for robots now.
 
 The system starts with the node "ScanRegistartion", where feature points are extracted. Before the feature extraction, dynamic objects are removed from the raw point cloud, since in urban scenes there are usually many dynamic objects, which 
 affect system robustness and precision. For the dynamic objects filter, we use a fast point cloud segmentation method. The Euclidean clustering is applied to group points into some clusters. The raw point cloud is divided into ground points, background points, and foreground points. 
