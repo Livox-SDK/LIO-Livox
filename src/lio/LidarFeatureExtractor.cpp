@@ -89,17 +89,17 @@ bool LidarFeatureExtractor::plane_judge(const std::vector<PointType>& point_list
 void LidarFeatureExtractor::detectFeaturePoint(pcl::PointCloud<PointType>::Ptr& cloud,
                                                 std::vector<int>& pointsLessSharp,
                                                 std::vector<int>& pointsLessFlat){
-  int CloudFeatureFlag[20000];
-  float cloudCurvature[20000];
-  float cloudDepth[20000];
-  int cloudSortInd[20000];
-  float cloudReflect[20000];
-  int reflectSortInd[20000];
-  int cloudAngle[20000];
 
   pcl::PointCloud<PointType>::Ptr& laserCloudIn = cloud;
 
   int cloudSize = laserCloudIn->points.size();
+  int CloudFeatureFlag[cloudSize + 1];
+  float cloudCurvature[cloudSize + 1];
+  float cloudDepth[cloudSize + 1];
+  int cloudSortInd[cloudSize + 1];
+  float cloudReflect[cloudSize + 1];
+  int reflectSortInd[cloudSize + 1];
+  int cloudAngle[cloudSize + 1];
 
   PointType point;
   pcl::PointCloud<PointType>::Ptr _laserCloud(new pcl::PointCloud<PointType>());
